@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Projects | Tim van Beeck</title>
-    <link>https://example.com/project/</link>
-      <atom:link href="https://example.com/project/index.xml" rel="self" type="application/rss+xml" />
+    <link>https://timvanbeeck.github.io/project/</link>
+      <atom:link href="https://timvanbeeck.github.io/project/index.xml" rel="self" type="application/rss+xml" />
     <description>Projects</description>
     <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Fri, 03 Dec 2021 00:00:00 +0000</lastBuildDate>
     <image>
-      <url>https://example.com/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
+      <url>https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
       <title>Projects</title>
-      <link>https://example.com/project/</link>
+      <link>https://timvanbeeck.github.io/project/</link>
     </image>
     
     <item>
       <title>Bachelor Thesis</title>
-      <link>https://example.com/project/example/</link>
+      <link>https://timvanbeeck.github.io/project/example/</link>
       <pubDate>Fri, 03 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>https://example.com/project/example/</guid>
+      <guid>https://timvanbeeck.github.io/project/example/</guid>
       <description>&lt;p&gt;Helioseismology studies the interior of the sun through solar oscillations. &lt;br&gt;
 In this context, current research aims to develop numerical models for the equations of solar and stellar oscillation. With numerous simplifications, one obtains the following equation:&lt;/p&gt;
 

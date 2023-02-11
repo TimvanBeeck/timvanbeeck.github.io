@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tim van Beeck</title>
-    <link>https://example.com/</link>
-      <atom:link href="https://example.com/index.xml" rel="self" type="application/rss+xml" />
+    <link>https://timvanbeeck.github.io/</link>
+      <atom:link href="https://timvanbeeck.github.io/index.xml" rel="self" type="application/rss+xml" />
     <description>Tim van Beeck</description>
     <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Thu, 01 Dec 2022 21:13:14 -0500</lastBuildDate>
     <image>
-      <url>https://example.com/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
+      <url>https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
       <title>Tim van Beeck</title>
-      <link>https://example.com/</link>
+      <link>https://timvanbeeck.github.io/</link>
     </image>
     
     <item>
       <title>Test</title>
-      <link>https://example.com/post/test/</link>
+      <link>https://timvanbeeck.github.io/post/test/</link>
       <pubDate>Thu, 01 Dec 2022 21:13:14 -0500</pubDate>
-      <guid>https://example.com/post/test/</guid>
+      <guid>https://timvanbeeck.github.io/post/test/</guid>
       <description>
 
 
@@ -53,7 +53,7 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://example.com/post/test/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/post/test/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
@@ -64,9 +64,9 @@ Figure 1: A fancy pie chart.
     
     <item>
       <title>An example conference paper</title>
-      <link>https://example.com/publication/unfittedmixed/</link>
+      <link>https://timvanbeeck.github.io/publication/unfittedmixed/</link>
       <pubDate>Sat, 01 Oct 2022 00:00:00 +0000</pubDate>
-      <guid>https://example.com/publication/unfittedmixed/</guid>
+      <guid>https://timvanbeeck.github.io/publication/unfittedmixed/</guid>
       <description>&lt;div class=&#34;alert alert-note&#34;&gt;
   &lt;div&gt;
     Click the &lt;em&gt;Cite&lt;/em&gt; button above to demo the feature to enable visitors to import publication metadata into their reference management software.
@@ -83,9 +83,9 @@ Figure 1: A fancy pie chart.
     
     <item>
       <title>NoKo 2022</title>
-      <link>https://example.com/talk/noko-2022/</link>
+      <link>https://timvanbeeck.github.io/talk/noko-2022/</link>
       <pubDate>Fri, 17 Jun 2022 00:00:00 +0000</pubDate>
-      <guid>https://example.com/talk/noko-2022/</guid>
+      <guid>https://timvanbeeck.github.io/talk/noko-2022/</guid>
       <description>&lt;!---
 &lt;div class=&#34;alert alert-note&#34;&gt;
   &lt;div&gt;
@@ -124,9 +124,9 @@ slides: example--&gt;
     
     <item>
       <title>Bachelor Thesis</title>
-      <link>https://example.com/project/example/</link>
+      <link>https://timvanbeeck.github.io/project/example/</link>
       <pubDate>Fri, 03 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>https://example.com/project/example/</guid>
+      <guid>https://timvanbeeck.github.io/project/example/</guid>
       <description>&lt;p&gt;Helioseismology studies the interior of the sun through solar oscillations. &lt;br&gt;
 In this context, current research aims to develop numerical models for the equations of solar and stellar oscillation. With numerous simplifications, one obtains the following equation:&lt;/p&gt;
 
@@ -138,9 +138,9 @@ $$\rho w - \nabla \cdot ( \rho ( u \otimes u) \nabla w) = f. $$
     
     <item>
       <title>Welcome to Wowchemy, the website builder for Hugo</title>
-      <link>https://example.com/oldposts/getting-started/</link>
+      <link>https://timvanbeeck.github.io/oldposts/getting-started/</link>
       <pubDate>Sun, 13 Dec 2020 00:00:00 +0000</pubDate>
-      <guid>https://example.com/oldposts/getting-started/</guid>
+      <guid>https://timvanbeeck.github.io/oldposts/getting-started/</guid>
       <description>&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;The Wowchemy website builder for Hugo, along with its starter templates, is designed for professional creators, educators, and teams/organizations - although it can be used to create any kind of site&lt;/li&gt;
@@ -217,9 +217,9 @@ $$\rho w - \nabla \cdot ( \rho ( u \otimes u) \nabla w) = f. $$
     
     <item>
       <title>Hello R Markdown</title>
-      <link>https://example.com/misc/2020-12-01-r-rmarkdown/</link>
+      <link>https://timvanbeeck.github.io/misc/2020-12-01-r-rmarkdown/</link>
       <pubDate>Tue, 01 Dec 2020 21:13:14 -0500</pubDate>
-      <guid>https://example.com/misc/2020-12-01-r-rmarkdown/</guid>
+      <guid>https://timvanbeeck.github.io/misc/2020-12-01-r-rmarkdown/</guid>
       <description>
 
 
@@ -256,7 +256,7 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://example.com/misc/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/misc/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
@@ -267,9 +267,9 @@ Figure 1: A fancy pie chart.
     
     <item>
       <title>Hello R Markdown</title>
-      <link>https://example.com/oldposts/2020-12-01-r-rmarkdown/</link>
+      <link>https://timvanbeeck.github.io/oldposts/2020-12-01-r-rmarkdown/</link>
       <pubDate>Tue, 01 Dec 2020 21:13:14 -0500</pubDate>
-      <guid>https://example.com/oldposts/2020-12-01-r-rmarkdown/</guid>
+      <guid>https://timvanbeeck.github.io/oldposts/2020-12-01-r-rmarkdown/</guid>
       <description>
 
 
@@ -306,7 +306,7 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://example.com/oldposts/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/oldposts/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
@@ -317,9 +317,9 @@ Figure 1: A fancy pie chart.
     
     <item>
       <title>Slides</title>
-      <link>https://example.com/slides/example/</link>
+      <link>https://timvanbeeck.github.io/slides/example/</link>
       <pubDate>Tue, 05 Feb 2019 00:00:00 +0000</pubDate>
-      <guid>https://example.com/slides/example/</guid>
+      <guid>https://timvanbeeck.github.io/slides/example/</guid>
       <description>&lt;h1 id=&#34;create-slides-in-markdown-with-wowchemy&#34;&gt;Create slides in Markdown with Wowchemy&lt;/h1&gt;
 &lt;p&gt;&lt;a href=&#34;https://wowchemy.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Wowchemy&lt;/a&gt; | &lt;a href=&#34;https://owchemy.com/docs/managing-content/#create-slides&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Documentation&lt;/a&gt;&lt;/p&gt;
 &lt;hr&gt;
@@ -442,9 +442,9 @@ $$&lt;/p&gt;
     
     <item>
       <title>An example conference paper</title>
-      <link>https://example.com/publication/example/</link>
+      <link>https://timvanbeeck.github.io/publication/example/</link>
       <pubDate>Mon, 01 Jul 2013 00:00:00 +0000</pubDate>
-      <guid>https://example.com/publication/example/</guid>
+      <guid>https://timvanbeeck.github.io/publication/example/</guid>
       <description>&lt;div class=&#34;alert alert-note&#34;&gt;
   &lt;div&gt;
     Click the &lt;em&gt;Cite&lt;/em&gt; button above to demo the feature to enable visitors to import publication metadata into their reference management software.
@@ -461,9 +461,9 @@ $$&lt;/p&gt;
     
     <item>
       <title></title>
-      <link>https://example.com/admin/config.yml</link>
+      <link>https://timvanbeeck.github.io/admin/config.yml</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://example.com/admin/config.yml</guid>
+      <guid>https://timvanbeeck.github.io/admin/config.yml</guid>
       <description></description>
     </item>
     

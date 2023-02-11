@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>R | Tim van Beeck</title>
-    <link>https://example.com/category/r/</link>
-      <atom:link href="https://example.com/category/r/index.xml" rel="self" type="application/rss+xml" />
+    <link>https://timvanbeeck.github.io/category/r/</link>
+      <atom:link href="https://timvanbeeck.github.io/category/r/index.xml" rel="self" type="application/rss+xml" />
     <description>R</description>
     <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Thu, 01 Dec 2022 21:13:14 -0500</lastBuildDate>
     <image>
-      <url>https://example.com/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
+      <url>https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
       <title>R</title>
-      <link>https://example.com/category/r/</link>
+      <link>https://timvanbeeck.github.io/category/r/</link>
     </image>
     
     <item>
       <title>Test</title>
-      <link>https://example.com/post/test/</link>
+      <link>https://timvanbeeck.github.io/post/test/</link>
       <pubDate>Thu, 01 Dec 2022 21:13:14 -0500</pubDate>
-      <guid>https://example.com/post/test/</guid>
+      <guid>https://timvanbeeck.github.io/post/test/</guid>
       <description>
 
 
@@ -53,7 +53,7 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://example.com/post/test/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/post/test/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
@@ -64,9 +64,9 @@ Figure 1: A fancy pie chart.
     
     <item>
       <title>Hello R Markdown</title>
-      <link>https://example.com/misc/2020-12-01-r-rmarkdown/</link>
+      <link>https://timvanbeeck.github.io/misc/2020-12-01-r-rmarkdown/</link>
       <pubDate>Tue, 01 Dec 2020 21:13:14 -0500</pubDate>
-      <guid>https://example.com/misc/2020-12-01-r-rmarkdown/</guid>
+      <guid>https://timvanbeeck.github.io/misc/2020-12-01-r-rmarkdown/</guid>
       <description>
 
 
@@ -103,7 +103,7 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://example.com/misc/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/misc/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
@@ -114,9 +114,9 @@ Figure 1: A fancy pie chart.
     
     <item>
       <title>Hello R Markdown</title>
-      <link>https://example.com/oldposts/2020-12-01-r-rmarkdown/</link>
+      <link>https://timvanbeeck.github.io/oldposts/2020-12-01-r-rmarkdown/</link>
       <pubDate>Tue, 01 Dec 2020 21:13:14 -0500</pubDate>
-      <guid>https://example.com/oldposts/2020-12-01-r-rmarkdown/</guid>
+      <guid>https://timvanbeeck.github.io/oldposts/2020-12-01-r-rmarkdown/</guid>
       <description>
 
 
@@ -153,7 +153,7 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://example.com/oldposts/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/oldposts/2020-12-01-r-rmarkdown/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
