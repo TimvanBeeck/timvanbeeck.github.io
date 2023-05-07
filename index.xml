@@ -5,7 +5,7 @@
     <link>https://timvanbeeck.github.io/</link>
       <atom:link href="https://timvanbeeck.github.io/index.xml" rel="self" type="application/rss+xml" />
     <description>Tim van Beeck</description>
-    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Thu, 01 Dec 2022 21:13:14 -0500</lastBuildDate>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Sun, 09 Jul 2023 00:00:00 +0000</lastBuildDate>
     <image>
       <url>https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
       <title>Tim van Beeck</title>
@@ -13,10 +13,133 @@
     </image>
     
     <item>
-      <title>Test</title>
-      <link>https://timvanbeeck.github.io/post/test/</link>
-      <pubDate>Thu, 01 Dec 2022 21:13:14 -0500</pubDate>
-      <guid>https://timvanbeeck.github.io/post/test/</guid>
+      <title>NGSolve User Meeting 2023</title>
+      <link>https://timvanbeeck.github.io/talk/ngsolve-user-meeting-2023/</link>
+      <pubDate>Sun, 09 Jul 2023 00:00:00 +0000</pubDate>
+      <guid>https://timvanbeeck.github.io/talk/ngsolve-user-meeting-2023/</guid>
+      <description>&lt;!---
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div&gt;
+    Click on the &lt;strong&gt;Slides&lt;/strong&gt; button above to view the built-in slides feature.
+  &lt;/div&gt;
+&lt;/div&gt;
+
+--&gt;
+&lt;!---
+Slides can be added in a few ways:
+--&gt;
+&lt;!---
+- **Create** slides using Wowchemy&#39;s [_Slides_](https://wowchemy.com/docs/managing-content/#create-slides) feature and link using `slides` parameter in the front matter of the talk file
+- **Upload** an existing slide deck to `static/` and link using `url_slides` parameter in the front matter of the talk file
+- **Embed** your slides (e.g. Google Slides) or presentation video on this page using [shortcodes](https://wowchemy.com/docs/writing-markdown-latex/).
+--&gt;
+&lt;!---
+Further event details, including [page elements](https://wowchemy.com/docs/writing-markdown-latex/) such as image galleries, can be added to the body of this page.
+--&gt;
+&lt;!--
+image:
+  caption: &#39;Image credit: [**Unsplash**](https://unsplash.com/photos/bzdhc5b3Bxs)&#39;
+  focal_point: Right
+links:
+- icon: twitter
+  icon_pack: fab
+  name: Follow
+  url: https://twitter.com/tim_vanbeeck
+location: Leibniz Universität Hannover
+projects:
+- example
+publishDate:
+slides: example--&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>EFEF 2023</title>
+      <link>https://timvanbeeck.github.io/upcoming/efef23/</link>
+      <pubDate>Fri, 12 May 2023 00:00:00 +0000</pubDate>
+      <guid>https://timvanbeeck.github.io/upcoming/efef23/</guid>
+      <description>&lt;!---
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div&gt;
+    Click on the &lt;strong&gt;Slides&lt;/strong&gt; button above to view the built-in slides feature.
+  &lt;/div&gt;
+&lt;/div&gt;
+
+--&gt;
+&lt;!---
+Slides can be added in a few ways:
+--&gt;
+&lt;!---
+- **Create** slides using Wowchemy&#39;s [_Slides_](https://wowchemy.com/docs/managing-content/#create-slides) feature and link using `slides` parameter in the front matter of the talk file
+- **Upload** an existing slide deck to `static/` and link using `url_slides` parameter in the front matter of the talk file
+- **Embed** your slides (e.g. Google Slides) or presentation video on this page using [shortcodes](https://wowchemy.com/docs/writing-markdown-latex/).
+--&gt;
+&lt;!---
+Further event details, including [page elements](https://wowchemy.com/docs/writing-markdown-latex/) such as image galleries, can be added to the body of this page.
+--&gt;
+&lt;!--
+image:
+  caption: &#39;Image credit: [**Unsplash**](https://unsplash.com/photos/bzdhc5b3Bxs)&#39;
+  focal_point: Right
+links:
+- icon: twitter
+  icon_pack: fab
+  name: Follow
+  url: https://twitter.com/tim_vanbeeck
+location: Leibniz Universität Hannover
+projects:
+- example
+publishDate:
+slides: example--&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>European Finite Element Fair 2023</title>
+      <link>https://timvanbeeck.github.io/talk/european-finite-element-fair-2023/</link>
+      <pubDate>Fri, 12 May 2023 00:00:00 +0000</pubDate>
+      <guid>https://timvanbeeck.github.io/talk/european-finite-element-fair-2023/</guid>
+      <description>&lt;!---
+&lt;div class=&#34;alert alert-note&#34;&gt;
+  &lt;div&gt;
+    Click on the &lt;strong&gt;Slides&lt;/strong&gt; button above to view the built-in slides feature.
+  &lt;/div&gt;
+&lt;/div&gt;
+
+--&gt;
+&lt;!---
+Slides can be added in a few ways:
+--&gt;
+&lt;!---
+- **Create** slides using Wowchemy&#39;s [_Slides_](https://wowchemy.com/docs/managing-content/#create-slides) feature and link using `slides` parameter in the front matter of the talk file
+- **Upload** an existing slide deck to `static/` and link using `url_slides` parameter in the front matter of the talk file
+- **Embed** your slides (e.g. Google Slides) or presentation video on this page using [shortcodes](https://wowchemy.com/docs/writing-markdown-latex/).
+--&gt;
+&lt;!---
+Further event details, including [page elements](https://wowchemy.com/docs/writing-markdown-latex/) such as image galleries, can be added to the body of this page.
+--&gt;
+&lt;!--
+image:
+  caption: &#39;Image credit: [**Unsplash**](https://unsplash.com/photos/bzdhc5b3Bxs)&#39;
+  focal_point: Right
+links:
+- icon: twitter
+  icon_pack: fab
+  name: Follow
+  url: https://twitter.com/tim_vanbeeck
+location: Leibniz Universität Hannover
+projects:
+- example
+publishDate:
+slides: example--&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Kernel density estimation for MDAX returns</title>
+      <link>https://timvanbeeck.github.io/post/kde/</link>
+      <pubDate>Sat, 22 Apr 2023 21:13:14 -0500</pubDate>
+      <guid>https://timvanbeeck.github.io/post/kde/</guid>
       <description>
 
 
@@ -53,12 +176,26 @@ pie(
   init.angle = -50, border = NA
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:pie&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;https://timvanbeeck.github.io/post/test/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;https://timvanbeeck.github.io/post/kde/index.en_files/figure-html/pie-1.png&#34; alt=&#34;A fancy pie chart.&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: A fancy pie chart.
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Helioseismology</title>
+      <link>https://timvanbeeck.github.io/research/helio/</link>
+      <pubDate>Sat, 22 Apr 2023 00:00:00 +0000</pubDate>
+      <guid>https://timvanbeeck.github.io/research/helio/</guid>
+      <description>&lt;p&gt;Helioseismology studies the interior of the sun through solar oscillations. &lt;br&gt;
+In this context, current research aims to develop numerical models for the equations of solar and stellar oscillation. With numerous simplifications, one obtains the following equation:&lt;/p&gt;
+
+$$\rho w - \nabla \cdot ( \rho ( u \otimes u) \nabla w) = f. $$
+
+&lt;p&gt;In this thesis, we develop and analyze a discontinuous Galerkin formulaion for this problem. Furthermore, numerical studies are performed.&lt;/p&gt;
 </description>
     </item>
     
@@ -124,9 +261,9 @@ slides: example--&gt;
     
     <item>
       <title>Bachelor Thesis</title>
-      <link>https://timvanbeeck.github.io/project/example/</link>
+      <link>https://timvanbeeck.github.io/project/thesis_ba/</link>
       <pubDate>Fri, 03 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>https://timvanbeeck.github.io/project/example/</guid>
+      <guid>https://timvanbeeck.github.io/project/thesis_ba/</guid>
       <description>&lt;p&gt;Helioseismology studies the interior of the sun through solar oscillations. &lt;br&gt;
 In this context, current research aims to develop numerical models for the equations of solar and stellar oscillation. With numerous simplifications, one obtains the following equation:&lt;/p&gt;
 
