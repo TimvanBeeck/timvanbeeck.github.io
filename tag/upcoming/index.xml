@@ -53,46 +53,5 @@ slides: example--&gt;
 </description>
     </item>
     
-    <item>
-      <title>European Finite Element Fair 2023</title>
-      <link>https://timvanbeeck.github.io/talk/european-finite-element-fair-2023/</link>
-      <pubDate>Fri, 12 May 2023 00:00:00 +0000</pubDate>
-      <guid>https://timvanbeeck.github.io/talk/european-finite-element-fair-2023/</guid>
-      <description>&lt;!---
-&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div&gt;
-    Click on the &lt;strong&gt;Slides&lt;/strong&gt; button above to view the built-in slides feature.
-  &lt;/div&gt;
-&lt;/div&gt;
-
---&gt;
-&lt;!---
-Slides can be added in a few ways:
---&gt;
-&lt;!---
-- **Create** slides using Wowchemy&#39;s [_Slides_](https://wowchemy.com/docs/managing-content/#create-slides) feature and link using `slides` parameter in the front matter of the talk file
-- **Upload** an existing slide deck to `static/` and link using `url_slides` parameter in the front matter of the talk file
-- **Embed** your slides (e.g. Google Slides) or presentation video on this page using [shortcodes](https://wowchemy.com/docs/writing-markdown-latex/).
---&gt;
-&lt;!---
-Further event details, including [page elements](https://wowchemy.com/docs/writing-markdown-latex/) such as image galleries, can be added to the body of this page.
---&gt;
-&lt;!--
-image:
-  caption: &#39;Image credit: [**Unsplash**](https://unsplash.com/photos/bzdhc5b3Bxs)&#39;
-  focal_point: Right
-links:
-- icon: twitter
-  icon_pack: fab
-  name: Follow
-  url: https://twitter.com/tim_vanbeeck
-location: Leibniz Universität Hannover
-projects:
-- example
-publishDate:
-slides: example--&gt;
-</description>
-    </item>
-    
   </channel>
 </rss>
