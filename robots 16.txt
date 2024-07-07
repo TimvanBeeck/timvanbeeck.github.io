@@ -1,0 +1,3 @@
+User-agent: *
+
+Sitemap: https://timvanbeeck.github.io/sitemap.xml

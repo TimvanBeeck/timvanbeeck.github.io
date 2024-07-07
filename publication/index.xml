@@ -5,12 +5,20 @@
     <link>https://timvanbeeck.github.io/publication/</link>
       <atom:link href="https://timvanbeeck.github.io/publication/index.xml" rel="self" type="application/rss+xml" />
     <description>Publications</description>
-    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Thu, 22 Jun 2023 00:00:00 +0000</lastBuildDate>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 13 Mar 2024 00:00:00 +0000</lastBuildDate>
     <image>
       <url>https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
       <title>Publications</title>
       <link>https://timvanbeeck.github.io/publication/</link>
     </image>
+    
+    <item>
+      <title>An adaptive mesh refinement strategy to ensure quasi-optimality of the conforming finite element method for the Helmholtz equation via T-coercivity</title>
+      <link>https://timvanbeeck.github.io/publication/helmt/</link>
+      <pubDate>Wed, 13 Mar 2024 00:00:00 +0000</pubDate>
+      <guid>https://timvanbeeck.github.io/publication/helmt/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Analysis of divergence-preserving unfitted finite element methods for the mixed Poisson problem</title>
