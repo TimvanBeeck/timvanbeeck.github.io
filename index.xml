@@ -5,12 +5,20 @@
     <link>https://timvanbeeck.github.io/</link>
       <atom:link href="https://timvanbeeck.github.io/index.xml" rel="self" type="application/rss+xml" />
     <description>Tim van Beeck</description>
-    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Thu, 13 Mar 2025 00:00:00 +0000</lastBuildDate>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Sun, 13 Apr 2025 00:00:00 +0000</lastBuildDate>
     <image>
       <url>https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png</url>
       <title>Tim van Beeck</title>
       <link>https://timvanbeeck.github.io/</link>
     </image>
+    
+    <item>
+      <title>Hybrid discontinuous Galerkin discretizations for the damped time-harmonic Galbrun&#39;s equation</title>
+      <link>https://timvanbeeck.github.io/publication/galbrunhybrid/</link>
+      <pubDate>Sun, 13 Apr 2025 00:00:00 +0000</pubDate>
+      <guid>https://timvanbeeck.github.io/publication/galbrunhybrid/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Analysis and numerical analysis of the Helmholtz-Korteweg equation</title>
