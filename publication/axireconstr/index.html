@@ -64,10 +64,10 @@
   
     
   
-  <meta name="description" content="In this article, we consider the damped time-harmonic Galbrun&#39;s equation which models solar and stellar oscillations. We introduce and analyze hybrid discontinuous Galerkin discretizations, which are stable and convergent for any polynomial degree greater or equal than one and are computationally more efficient than discontinuous Galerkin discretizations. Additionally, the methods are stable with respect to the drastic changes in the magnitude of the coefficients occurring in stars. The analysis is based on the concept of discrete approximation schemes and weak T-compatibility, which exploits the weakly T-coercive structure of the equation." />
+  <meta name="description" content="This paper studies pressure-robustness for the axisymmetric Stokes problem. The transformation to cylindrical coordinates requires that the radially weighted velocity is divergence-free in the classical sense. Consequently, traditional divergence-free finite element methods from the Cartesian setting -- even if inf-sup stable -- are in general not divergence-free in the axisymmetric formulation. We therefore explore the approach that restores pressure-robustness via reconstruction operators for a low-order Bernardi--Raugel discretization. We show that an application of standard interpolation operators from the Cartesian setting to radially weighted test functions works in principle, but it lacks properties needed to derive optimal consistency error estimates. To address this, we introduce a reconstruction operator into a finite element space spanned by Raviart--Thomas functions that are modified such that they vanish on the rotation axis. This vanishing-on-axis property is the key to obtain optimal consistency error estimates. Numerical examples demonstrate the overall feasibility of the approach and include cases where the vanishing-on-axis property yields significantly better results." />
 
   
-  <link rel="alternate" hreflang="en-us" href="https://timvanbeeck.github.io/publication/galbrunhybrid/" />
+  <link rel="alternate" hreflang="en-us" href="https://timvanbeeck.github.io/publication/axireconstr/" />
 
   
   
@@ -285,7 +285,7 @@
   <link rel="icon" type="image/png" href="/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_32x32_fill_lanczos_center_3.png" />
   <link rel="apple-touch-icon" type="image/png" href="/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_180x180_fill_lanczos_center_3.png" />
 
-  <link rel="canonical" href="https://timvanbeeck.github.io/publication/galbrunhybrid/" />
+  <link rel="canonical" href="https://timvanbeeck.github.io/publication/axireconstr/" />
 
   
   
@@ -311,9 +311,9 @@
     <meta property="twitter:creator" content="@wowchemy" />
   
   <meta property="og:site_name" content="Tim van Beeck" />
-  <meta property="og:url" content="https://timvanbeeck.github.io/publication/galbrunhybrid/" />
-  <meta property="og:title" content="Hybrid discontinuous Galerkin discretizations for the damped time-harmonic Galbrun&#39;s equation | Tim van Beeck" />
-  <meta property="og:description" content="In this article, we consider the damped time-harmonic Galbrun&#39;s equation which models solar and stellar oscillations. We introduce and analyze hybrid discontinuous Galerkin discretizations, which are stable and convergent for any polynomial degree greater or equal than one and are computationally more efficient than discontinuous Galerkin discretizations. Additionally, the methods are stable with respect to the drastic changes in the magnitude of the coefficients occurring in stars. The analysis is based on the concept of discrete approximation schemes and weak T-compatibility, which exploits the weakly T-coercive structure of the equation." /><meta property="og:image" content="https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png" />
+  <meta property="og:url" content="https://timvanbeeck.github.io/publication/axireconstr/" />
+  <meta property="og:title" content="Pressure-robustness for the axisymmetric Stokes problem by velocity reconstruction | Tim van Beeck" />
+  <meta property="og:description" content="This paper studies pressure-robustness for the axisymmetric Stokes problem. The transformation to cylindrical coordinates requires that the radially weighted velocity is divergence-free in the classical sense. Consequently, traditional divergence-free finite element methods from the Cartesian setting -- even if inf-sup stable -- are in general not divergence-free in the axisymmetric formulation. We therefore explore the approach that restores pressure-robustness via reconstruction operators for a low-order Bernardi--Raugel discretization. We show that an application of standard interpolation operators from the Cartesian setting to radially weighted test functions works in principle, but it lacks properties needed to derive optimal consistency error estimates. To address this, we introduce a reconstruction operator into a finite element space spanned by Raviart--Thomas functions that are modified such that they vanish on the rotation axis. This vanishing-on-axis property is the key to obtain optimal consistency error estimates. Numerical examples demonstrate the overall feasibility of the approach and include cases where the vanishing-on-axis property yields significantly better results." /><meta property="og:image" content="https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png" />
     <meta property="twitter:image" content="https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_512x512_fill_lanczos_center_3.png" /><meta property="og:locale" content="en-us" />
   
     
@@ -322,7 +322,7 @@
         content="2017-01-01T00:00:00&#43;00:00"
       />
     
-    <meta property="article:modified_time" content="2025-04-13T00:00:00&#43;00:00">
+    <meta property="article:modified_time" content="2026-03-13T00:00:00&#43;00:00">
   
 
   
@@ -344,16 +344,16 @@
   "@type": "Article",
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://timvanbeeck.github.io/publication/galbrunhybrid/"
+    "@id": "https://timvanbeeck.github.io/publication/axireconstr/"
   },
-  "headline": "Hybrid discontinuous Galerkin discretizations for the damped time-harmonic Galbrun's equation",
+  "headline": "Pressure-robustness for the axisymmetric Stokes problem by velocity reconstruction",
   
   "datePublished": "2017-01-01T00:00:00Z",
-  "dateModified": "2025-04-13T00:00:00Z",
+  "dateModified": "2026-03-13T00:00:00Z",
   
   "author": {
     "@type": "Person",
-    "name": "Martin Halla"
+    "name": "Philip L. Lederer"
   },
   
   "publisher": {
@@ -364,7 +364,7 @@
       "url": "https://timvanbeeck.github.io/media/icon_hua2ec155b4296a9c9791d015323e16eb5_11927_192x192_fill_lanczos_center_3.png"
     }
   },
-  "description": "In this article, we consider the damped time-harmonic Galbrun's equation which models solar and stellar oscillations. We introduce and analyze hybrid discontinuous Galerkin discretizations, which are stable and convergent for any polynomial degree greater or equal than one and are computationally more efficient than discontinuous Galerkin discretizations. Additionally, the methods are stable with respect to the drastic changes in the magnitude of the coefficients occurring in stars. The analysis is based on the concept of discrete approximation schemes and weak T-compatibility, which exploits the weakly T-coercive structure of the equation."
+  "description": "This paper studies pressure-robustness for the axisymmetric Stokes problem. The transformation to cylindrical coordinates requires that the radially weighted velocity is divergence-free in the classical sense. Consequently, traditional divergence-free finite element methods from the Cartesian setting -- even if inf-sup stable -- are in general not divergence-free in the axisymmetric formulation. We therefore explore the approach that restores pressure-robustness via reconstruction operators for a low-order Bernardi--Raugel discretization. We show that an application of standard interpolation operators from the Cartesian setting to radially weighted test functions works in principle, but it lacks properties needed to derive optimal consistency error estimates. To address this, we introduce a reconstruction operator into a finite element space spanned by Raviart--Thomas functions that are modified such that they vanish on the rotation axis. This vanishing-on-axis property is the key to obtain optimal consistency error estimates. Numerical examples demonstrate the overall feasibility of the approach and include cases where the vanishing-on-axis property yields significantly better results."
 }
 </script>
 
@@ -380,11 +380,11 @@
 
 
 
-  <title>Hybrid discontinuous Galerkin discretizations for the damped time-harmonic Galbrun&#39;s equation | Tim van Beeck</title>
+  <title>Pressure-robustness for the axisymmetric Stokes problem by velocity reconstruction | Tim van Beeck</title>
 </head>
 
 
-<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="edf122c429109ab056ee3d0fe62c0db6" >
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="page-wrapper   " data-wc-page-id="86443f2b5c94b9bcc016c0819a22a5e0" >
 
   
   
@@ -729,7 +729,7 @@
   
   
 <div class="article-container pt-3">
-  <h1>Hybrid discontinuous Galerkin discretizations for the damped time-harmonic Galbrun&#39;s equation</h1>
+  <h1>Pressure-robustness for the axisymmetric Stokes problem by velocity reconstruction</h1>
 
   
 
@@ -747,8 +747,9 @@
     
 
   <span >
-      Martin Halla</span>, <span >
+      Philip L. Lederer</span>, <span >
       Christoph Lehrenfeld</span>, <span >
+      Christian Merdon</span>, <span >
       Tim van Beeck</span><i class="author-notes fas fa-user" data-toggle="tooltip" title="That&#39;s me!"></i>
   </div>
   
@@ -760,7 +761,7 @@
     
       
     
-    April, 2025
+    March, 2026
   </span>
   
 
@@ -801,7 +802,7 @@
 
 
 <a href="#" class="btn btn-outline-primary btn-page-header js-cite-modal"
-        data-filename="/publication/galbrunhybrid/cite.bib">
+        data-filename="/publication/axireconstr/cite.bib">
   Cite
 </a>
 
@@ -827,22 +828,8 @@
   
     
   
-  <a class="btn btn-outline-primary btn-page-header" href="https://arxiv.org/pdf/2504.09547.pdf" target="_blank" rel="noopener">
+  <a class="btn btn-outline-primary btn-page-header" href="https://arxiv.org/pdf/2603.01030" target="_blank" rel="noopener">
     <i class="ai ai-open-access mr-1"></i>ArXiv Preprint</a>
-
-  
-  
-  
-    
-  
-  
-  
-  
-  
-    
-  
-  <a class="btn btn-outline-primary btn-page-header" href="https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/0DQ9JQ" target="_blank" rel="noopener">
-    <i class="fas fa-code mr-1"></i>Code</a>
 
 
 </div>
@@ -857,7 +844,7 @@
 
     
     <h3>Abstract</h3>
-    <p class="pub-abstract">In this article, we consider the damped time-harmonic Galbrun&rsquo;s equation which models solar and stellar oscillations. We introduce and analyze hybrid discontinuous Galerkin discretizations, which are stable and convergent for any polynomial degree greater or equal than one and are computationally more efficient than discontinuous Galerkin discretizations. Additionally, the methods are stable with respect to the drastic changes in the magnitude of the coefficients occurring in stars. The analysis is based on the concept of discrete approximation schemes and weak T-compatibility, which exploits the weakly T-coercive structure of the equation.</p>
+    <p class="pub-abstract">This paper studies pressure-robustness for the axisymmetric Stokes problem. The transformation to cylindrical coordinates requires that the radially weighted velocity is divergence-free in the classical sense. Consequently, traditional divergence-free finite element methods from the Cartesian setting &ndash; even if inf-sup stable &ndash; are in general not divergence-free in the axisymmetric formulation. We therefore explore the approach that restores pressure-robustness via reconstruction operators for a low-order Bernardi&ndash;Raugel discretization. We show that an application of standard interpolation operators from the Cartesian setting to radially weighted test functions works in principle, but it lacks properties needed to derive optimal consistency error estimates. To address this, we introduce a reconstruction operator into a finite element space spanned by Raviart&ndash;Thomas functions that are modified such that they vanish on the rotation axis. This vanishing-on-axis property is the key to obtain optimal consistency error estimates. Numerical examples demonstrate the overall feasibility of the approach and include cases where the vanishing-on-axis property yields significantly better results.</p>
     
 
     
@@ -914,6 +901,12 @@
 
 
   
+  
+    
+
+
+
+
   
     
 
