@@ -1,0 +1,51 @@
+{
+  "education": [
+    {
+      "degree": "PhD in Mathematics",
+      "date": "Apr 2024 – present",
+      "institution": "University of Göttingen",
+      "detail": "Topic: Numerical Analysis of anisotropic wave propagation · Advisor: Christoph Lehrenfeld "
+    },
+    {
+      "degree": "MSc in Mathematics",
+      "date": "Oct 2021 – Dec 2023",
+      "institution": "University of Göttingen",
+      "detail": "Specialization in Numerical and Applied Mathematics"
+    },
+    {
+      "degree": "BSc in Mathematics",
+      "date": "Oct 2017 – Dec 2021",
+      "institution": "University of Göttingen",
+      "detail": "Specialization in Numerical and Applied Mathematics"
+    }
+  ],
+  "experience": [
+    {
+      "role": "Research Assistant",
+      "date": "Jan 2024 – present",
+      "institution": "University of Göttingen, Institute for Numerical and Applied Mathematics"
+    },
+    {
+      "role": "Student Assistant",
+      "date": "Nov 2021 – Dec 2023",
+      "institution": "University of Göttingen, Institute for Numerical and Applied Mathematics"
+    }
+  ],
+  "teaching": [
+    {
+      "year": "Summer term 2026",
+      "course": "Mathematical oriented programming (Python, Lecture & Tutorial)",
+      "institution": "University of Göttingen"
+    },
+    {
+      "year": "Winter term 2025 / 2026",
+      "course": "Mathematical oriented programming (Python, Tutorial)",
+      "institution": "University of Göttingen"
+    },
+    {
+      "year": "Winter term 2023 / 2024",
+      "course": "Partial Differential Equations (Tutorial)",
+      "institution": "University of Göttingen"
+    }
+  ]
+}

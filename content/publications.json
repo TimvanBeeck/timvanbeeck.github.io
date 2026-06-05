@@ -1,0 +1,132 @@
+[
+  {
+    "id": "pub7",
+    "type": "peer-review",
+    "authors": [
+      { "name": "Christoph Lehrenfeld" },
+      { "name": "Tim van Beeck", "self": true },
+      { "name": "Igor Voulis" }
+    ],
+    "title": "Analysis of divergence-preserving unfitted finite element methods for the mixed Poisson problem",
+    "venue": "Mathematics of Computation, Vol. 94 (2025)",
+    "citekey": "lehrenfeld2025analysis",
+    "links": {
+      "Math. Comp.": "https://pubs.ams.org/journals/mcom/2025-94-354/S0025-5718-2024-04027-9",
+      "arxiv": "https://arxiv.org/pdf/2306.12722",
+      "code": "https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/LYR2CG"
+    }
+  },
+  {
+    "id": "pub8",
+    "type": "peer-review",
+    "authors": [
+      { "name": "Martin Halla" },
+      { "name": "Christoph Lehrenfeld" },
+      { "name": "Tim van Beeck", "self": true }
+    ],
+    "title": "Hybrid discontinuous Galerkin discretizations for the damped time-harmonic Galbrun’s equation",
+    "venue": "ESAIM: Mathematical Modelling and Numerical Analysis, Vol. 60 (2026)",
+    "citekey": "halla2026hybrid",
+    "links": {
+      "M2AN": "https://www.esaim-m2an.org/articles/m2an/abs/2026/03/m2an250136/m2an250136.html",
+      "arxiv": "https://arxiv.org/pdf/2504.09547",
+      "code": "https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/0DQ9JQ"
+    }
+  },
+  {
+    "id": "pub3",
+    "type": "peer-review",
+    "authors": [
+      { "name": "Erik Burman" },
+      { "name": "Janosch Preuss" },
+      { "name": "Tim van Beeck", "self": true }
+    ],
+    "title": "Variational data assimilation for the wave equation in heterogeneous media",
+    "venue": "Accepted in: Communications on Applied Mathematics and Computation (2026)",
+    "citekey": "burman2025variational",
+    "links": {
+      "arxiv": "https://arxiv.org/pdf/2509.13108",
+      "code": "https://github.com/TimvanBeeck/waveUC_discCoefs"
+    }
+  },
+  {
+    "id": "pub1",
+    "type": "preprint",
+    "authors": [
+      { "name": "Tim Brüers" },
+      { "name": "Christoph Lehrenfeld" },
+      { "name": "Tim van Beeck", "self": true },
+      { "name": "Max Wardetzky" }
+    ],
+    "title": "Releasing the pressure: High-order surface flow discretizations via discrete Helmholtz-Hodge decompositions",
+    "venue": "Preprint (2026)",
+    "citekey": "bruers2026releasing",
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2603.27714", 
+      "code": "https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/VDG40Z"
+    }
+  },
+  {
+    "id": "pub2",
+    "type": "preprint",
+    "authors": [
+      { "name": "Philip L. Lederer" },
+      { "name": "Christoph Lehrenfeld" },
+      { "name": "Christian Merdon" },
+      { "name": "Tim van Beeck", "self": true }
+    ],
+    "title": "Pressure-robustness for the axisymmetric Stokes problem by velocity reconstruction",
+    "venue": "Preprint (2026)",
+    "citekey": "lederer2026pressure",
+    "links": {
+      "arxiv": "https://arxiv.org/pdf/2603.01030"
+    }
+  },
+  {
+    "id": "pub4",
+    "type": "preprint",
+    "authors": [
+      { "name": "Patrick E. Farrell" },
+      { "name": "Tim van Beeck", "self": true },
+      { "name": "Umberto Zerbinati" }
+    ],
+    "title": "Analysis and numerical analysis of the nematic Helmholtz--Korteweg equation",
+    "venue": "Preprint (2025)",
+    "citekey": "farrell2025analysis",
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2503.10771"
+    }
+  },
+  {
+    "id": "pub5",
+    "type": "preprint",
+    "authors": [
+      { "name": "Tim van Beeck", "self": true },
+      { "name": "Umberto Zerbinati" }
+    ],
+    "title": "An adaptive mesh refinement strategy to ensure quasi-optimality of finite element methods for self-adjoint Helmholtz problems",
+    "venue": "Preprint (2024)",
+    "citekey": "van2024adaptive",
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2403.06266"
+    }
+  },
+  {
+    "id": "thesis-msc",
+    "type": "thesis",
+    "authors": [{ "name": "Tim van Beeck", "self": true }],
+    "title": "On stable discontinuous Galerkin discretizations for Galbrun's equation",
+    "venue": "Master's Thesis · University of Göttingen, 2023",
+    "citekey": "vanbeeck2023msc",
+    "links": { "PDF": "assets/theses/Masterthesis_TimvanBeeck.pdf", "code": "https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/601VK8" }
+  },
+  {
+    "id": "thesis-bsc",
+    "type": "thesis",
+    "authors": [{ "name": "Tim van Beeck", "self": true }],
+    "title": "On a discontinuous Galerkin discretization for a degenerate diffusion equation",
+    "venue": "Bachelor's Thesis · University of Göttingen, 2021",
+    "citekey": "vanbeeck2021bsc",
+    "links": { "PDF": "assets/theses/vanBeeck_BA.pdf", "code": "https://github.com/TimvanBeeck/Bachelorthesis" }
+  }
+]

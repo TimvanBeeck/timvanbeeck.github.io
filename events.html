@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Talks & Events – Tim van Beeck</title>
+  <meta name="description" content="Talks and conference participation by Tim van Beeck.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav id="navbar">
+    <a href="index.html" class="nav-brand">Tim van Beeck</a>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#research">Research</a></li>
+      <li><a href="index.html#publications">Publications</a></li>
+      <li><a href="index.html#talks" class="active">Talks</a></li>
+      <li><a href="cv.html">Curriculum Vitae</a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+    <!-- ── Upcoming ── -->
+    <section id="upcoming">
+      <div class="container">
+        <h2>Talks &amp; Events</h2>
+
+        <h3 class="talks-subheading">Upcoming <span class="subsection-count" id="count-all-upcoming"></span></h3>
+        <ul class="talks-list" id="events-all-upcoming">
+          <p class="loading-msg">Loading…</p>
+        </ul>
+
+        <h3 class="talks-subheading">Past Events <span class="subsection-count" id="count-all-past"></span></h3>
+        <ul class="talks-list" id="events-all-past">
+          <p class="loading-msg">Loading…</p>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <p>&copy; 2026 Tim van Beeck</p>
+    </div>
+  </footer>
+
+  <!-- ── Citation Modal (required by shared script.js) ── -->
+  <div id="cite-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="cite-modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="cite-modal-title" class="modal-title">BibTeX Citation</span>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <pre class="modal-pre"><code id="cite-bib-content"></code></pre>
+      <div class="modal-footer">
+        <button id="copy-bib-btn" class="copy-btn">
+          <i class="fas fa-copy"></i> Copy to clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

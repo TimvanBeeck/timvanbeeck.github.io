@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV – Tim van Beeck</title>
+  <meta name="description" content="Curriculum Vitae of Tim van Beeck, PhD student in Applied Mathematics at the University of Göttingen.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav id="navbar">
+    <a href="index.html" class="nav-brand">Tim van Beeck</a>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#research">Research</a></li>
+      <li><a href="index.html#publications">Publications</a></li>
+      <li><a href="index.html#talks">Talks</a></li>
+      <li><a href="cv.html" class="active">Curriculum Vitae</a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+     <!-- ── Download ── -->
+     <section id="download" class="alt-bg">
+      <div class="container cv-section">
+        <h2>Full CV</h2>
+        <p>Download my complete academic CV as a PDF.</p>
+        <a href="assets/cv.pdf" download class="cv-button">
+          <i class="fas fa-download"></i>&nbsp; Download PDF
+        </a>
+      </div>
+    </section>
+
+    <!-- ── Experience ── -->
+    <section id="experience" class="alt-bg">
+      <div class="container">
+        <h2>Experience</h2>
+        <div class="timeline" id="cv-experience">
+          <p class="loading-msg">Loading…</p>
+        </div>
+
+        <h3 class="subsection-title subsection-title--spaced">Teaching</h3>
+        <div class="teaching-grid" id="cv-teaching">
+          <p class="loading-msg">Loading…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Education ── -->
+    <section id="education">
+      <div class="container">
+        <h2>Education</h2>
+        <div class="timeline" id="cv-education">
+          <p class="loading-msg">Loading…</p>
+        </div>
+      </div>
+    </section>
+
+
+
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <p>&copy; 2026 Tim van Beeck</p>
+    </div>
+  </footer>
+
+  <!-- ── Citation Modal ── -->
+  <div id="cite-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="cite-modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="cite-modal-title" class="modal-title">BibTeX Citation</span>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <pre class="modal-pre"><code id="cite-bib-content"></code></pre>
+      <div class="modal-footer">
+        <button id="copy-bib-btn" class="copy-btn">
+          <i class="fas fa-copy"></i> Copy to clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

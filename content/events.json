@@ -1,0 +1,159 @@
+{
+  "upcoming": [
+    {
+      "date": "Sep 2026",
+      "name": "Advances in Ordered Fluids and Alignment Phenomena: Modeling, Analysis, and Numerical Methods",
+      "location": "Borgo dei Gatti, Golferenzo, Oltrepò Pavese, Italy",
+      "role": "Invited Speaker", 
+      "url" : "https://sites.google.com/view/ordered-fluids/home-page"
+    },
+    {
+      "date": "Sep 2026",
+      "name": "Trefftz Workshop 2026",
+      "location": "Vienna, Austria",
+      "role": "Speaker", 
+      "url": "https://trefftz2026.univie.ac.at/"
+    },
+    {
+      "date": "Jul 2026",
+      "name": "CMAM 2026",
+      "location": "Vienna, Austria",
+      "role": "Speaker", 
+      "url": "https://www.tuwien.at/en/mg/asc/event/cmam2026"
+    },
+    {
+      "date": "Jun 2026",
+      "name": "NGSolve Usermeeting",
+      "location": "Winterhur, Switzerland",
+      "role": "Participant", 
+      "url": "https://www.zhaw.ch/en/engineering/institutes-centres/iamp/events/ngsolve-user-meeting-2026"
+    }
+  ],
+  "past": [
+    {
+      "date": "Oct 2025",
+      "name": "Oxford Numerical Analysis Seminar",
+      "location": "Oxford, United Kingdom",
+      "role": "Seminar Talk",
+      "slides": "oxford25.pdf", 
+      "url": "https://www.maths.ox.ac.uk/node/72701"
+    },
+    {
+      "date": "Sep 2025",
+      "name": "ENUMATH 2025",
+      "location": "Heidelberg, Germany",
+      "role": "Speaker", 
+      "slides": "enumath25.pdf", 
+      "url": "https://enumath2025.eu/"
+    },
+    {
+      "date": "Jun 2025",
+      "name": "NGSolve Usermeeting 2025",
+      "location": "Hamburg, Germany",
+      "role": "Participant", 
+      "url" : "https://www.conferences.uni-hamburg.de/event/594/"
+
+    },
+    {
+      "date": "May 2025",
+      "name": "European Finite Element Fair 2025",
+      "location": "SISSA, Trieste, Italy",
+      "role": "Speaker", 
+      "slides": "efef25.pdf", 
+      "url" : "https://indico.sissa.it/event/153/"
+    },
+    {
+      "date": "Feb 2025",
+      "name": "Mathematics of Wave Phenomena 2025",
+      "location": "Karlsruhe, Germany",
+      "role": "Speaker", 
+      "url" : "https://conference25.waves.kit.edu/",
+      "slides": "WavePhenom25.pdf"
+    },
+    {
+      "date": "Dec 2024",
+      "name": "Pavia Applied Mathematics Seminar",
+      "location": "University of Pavia, Italy",
+      "role": "Seminar Talk",
+      "slides": "Pavia24.pdf",
+      "url": "https://matematica.unipv.it/events/analysis-and-approximation-of-the-nematic-helmholtz-korteweg-equation/?occurrence=2024-12-10"
+    }, 
+    {
+      "date": "Nov 2024",
+      "name": "GAMM Workshop on Numerical Analysis",
+      "location": "Augsburg, Germany",
+      "role": "Speaker",
+      "slides": "GAMMNA24.pdf",
+      "url": "https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/numa/events/gammnaworkshop/"
+    },
+    {
+      "date": "Sep 2024",
+      "name": "GAMM Workshop on Applied and Numerical Linear Algebra",
+      "location": "Göttingen, Germany",
+      "role": "Participant",
+      "url": "https://www.uni-goettingen.de/de/gamm+workshop+on+applied+and+numerical+linear+algebra+2024/687071.html"
+    }, 
+    {
+      "date": "Sep 2024",
+      "name": "Chemnitz FEM Symposium 2024",
+      "location": "Chemnitz, Germany",
+      "role": "Speaker",
+      "slides": "Chemnitz24.pdf",
+      "url": "https://www.chemnitz-am.de/cfem2024/index.php"
+    }, 
+    {
+      "date": "Jul 2024",
+      "name": "WCCM 2024",
+      "location": "Vancouver, Canada",
+      "role": "Speaker",
+      "slides": "wccm24.pdf",
+      "url": "https://www.wccm2024.org/"
+    }, 
+    {
+      "date": "Jul 2024",
+      "name": "WAVES 2024",
+      "location": "Berlin, Germany",
+      "role": "Speaker",
+      "slides": "waves24.pdf",
+      "url": "https://waves2024.mps.mpg.de/"
+    },
+    {
+      "date": "Jun 2024",
+      "name": "European Finite Element Fair 2024",
+      "location": "London, United Kingdom",
+      "role": "Speaker",
+      "slides": "efef24.pdf",
+      "url": "https://efef2024.github.io/"
+    },
+    {
+      "date": "Jun 2024",
+      "name": "NGSolve Usermeeting 2024",
+      "location": "Vienna, Austria",
+      "role": "Participant",
+      "url": "https://ngsolve2024.conf.tuwien.ac.at/"
+    },
+    {
+      "date": "Jul 2023",
+      "name": "NGSolve Usermeeting 2023",
+      "location": "Portland, USA",
+      "role": "Participant",
+      "url": "https://ngsolve.org/usermeeting2023.html"
+    },
+    {
+      "date": "May 2023",
+      "name": "European Finite Element Fair 2023",
+      "location": "Enschede, Netherlands",
+      "role": "Speaker",
+      "slides": "efef23.pdf",
+      "url": "https://www.utwente.nl/en/eemcs/magnus/news_events/Conferences/efef2023/"
+    }, 
+    {
+      "date": "Jun 2022",
+      "name": "NoKo 2022",
+      "location": "Hannover, Germany",
+      "role": "Speaker",
+      "slides": "noko22.pdf",
+      "url": "https://www.ifam.uni-hannover.de/noko2022/"
+    }
+  ]
+}
