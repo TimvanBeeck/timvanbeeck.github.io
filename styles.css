@@ -11,31 +11,47 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   font-size: 1.06rem;
   line-height: 1.7;
-  color: #1a1a2e;
-  background: #ffffff;
+  color: var(--text);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
 /* ── Variables ── */
 :root {
-  --accent:      #4a6fa5;
-  --accent-dark: #3a5a8a;
-  --text:        #1a1a2e;
-  --text-muted:  #555577;
-  --bg:          #ffffff;
-  --bg-alt:      #f7f8fb;
-  --border:      #e4e7ef;
-  --nav-h:       60px;
-  --max-w:       1100px;
-  --radius:      8px;
+  color-scheme: light;
+  --accent:            #1a535c;
+  --accent-dark:       #0f3d44;
+  --text:              #1a1a2e;
+  --text-muted:        #4a4a6a;
+  --bg:                #ffffff;
+  --bg-alt:            #f4f6f7;
+  --border:            #dfe3e8;
+  --nav-bg:            rgba(255, 255, 255, 0.92);
+  --nav-bg-mobile:     rgba(255, 255, 255, 0.97);
+  --surface:           #ffffff;
+  --code-bg:           #f3f5f7;
+  --footer-bg:         #1a1a2e;
+  --footer-text:       rgba(255, 255, 255, 0.72);
+  --btn-text:          #ffffff;
+  --accent-subtle:     rgba(26, 83, 92, 0.10);
+  --accent-hover:      rgba(26, 83, 92, 0.08);
+  --badge-bg:          rgba(0, 0, 0, 0.05);
+  --badge-border:      rgba(0, 0, 0, 0.12);
+  --badge-hover-bg:    rgba(0, 0, 0, 0.10);
+  --badge-hover-border: rgba(0, 0, 0, 0.20);
+  --photo-shadow:      rgba(0, 0, 0, 0.10);
+  --dropdown-shadow:   rgba(0, 0, 0, 0.08);
+  --nav-h:             60px;
+  --max-w:             1100px;
+  --radius:            8px;
 }
 
 /* ── Typography ── */
-h1 { font-size: 2.5rem;   font-weight: 700; line-height: 1.2; }
-h2 { font-size: 1.75rem; font-weight: 700; line-height: 1.3; margin-bottom: 1.25rem; }
+h1 { font-size: 2.5rem;  font-weight: 700; line-height: 1.2; font-family: 'Source Serif 4', Georgia, serif; }
+h2 { font-size: 1.75rem; font-weight: 700; line-height: 1.3; margin-bottom: 1.25rem; font-family: 'Source Serif 4', Georgia, serif; }
 h3 { font-size: 1.1rem; font-weight: 600; }
 
 a {
@@ -67,21 +83,21 @@ section.alt-bg {
   left: 0;
   right: 0;
   height: var(--nav-h);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--nav-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
   z-index: 1000;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 2rem;
   gap: 1rem;
 }
 
 .nav-brand {
+  font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: var(--text);
   white-space: nowrap;
   flex-shrink: 0;
@@ -93,6 +109,7 @@ section.alt-bg {
   display: flex;
   gap: 0.25rem;
   align-items: center;
+  margin-left: auto;
 }
 
 .nav-links a {
@@ -106,7 +123,7 @@ section.alt-bg {
 .nav-links a:hover,
 .nav-links a.active {
   color: var(--accent);
-  background: rgba(74, 111, 165, 0.08);
+  background: var(--accent-hover);
 }
 
 .nav-toggle {
@@ -158,8 +175,14 @@ section.alt-bg {
   height: 190px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--border);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border: 3px solid var(--accent);
+  box-shadow: 0 4px 20px var(--photo-shadow), 0 0 0 1px var(--accent-subtle);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.about-photo:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 24px var(--photo-shadow), 0 0 0 3px var(--accent-subtle);
 }
 
 .about-photo-fallback {
@@ -215,7 +238,7 @@ section.alt-bg {
 .social-link:hover {
   color: var(--accent);
   border-color: var(--accent);
-  background: rgba(74, 111, 165, 0.06);
+  background: var(--accent-hover);
 }
 .social-link i {
   font-size: 0.95em;
@@ -235,7 +258,7 @@ section.alt-bg {
 .tag {
   font-size: 0.8rem;
   font-weight: 500;
-  background: rgba(74, 111, 165, 0.1);
+  background: var(--accent-subtle);
   color: var(--accent-dark);
   border-radius: 20px;
   padding: 0.25rem 0.75rem;
@@ -359,6 +382,13 @@ section.alt-bg {
   line-height: 1.4;
   margin-bottom: 0.3rem;
 }
+.pub-title-link {
+  color: inherit;
+  transition: color 0.15s;
+}
+.pub-title-link:hover {
+  color: var(--accent);
+}
 
 .pub-venue {
   font-size: 0.82rem;
@@ -378,19 +408,18 @@ section.alt-bg {
   letter-spacing: 0.02em;
   padding: 2px 10px;
   border-radius: 20px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--badge-bg);
   color: var(--text-muted);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--badge-border);
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .pub-badge:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--badge-hover-bg);
   color: var(--text);
-  border-color: rgba(0, 0, 0, 0.2);
+  border-color: var(--badge-hover-border);
 }
 
 .subsection-title {
-  font-size: 1.05rem;
   font-weight: 600;
   margin-bottom: 0.875rem;
   color: var(--text-muted);
@@ -407,7 +436,7 @@ section.alt-bg {
   padding: 0 0.45em;
   margin-left: 0.35em;
   border-radius: 20px;
-  background: rgba(74, 111, 165, 0.12);
+  background: var(--accent-subtle);
   color: var(--accent-dark);
   font-size: 0.9em;
   font-weight: 700;
@@ -425,16 +454,14 @@ section.alt-bg {
   margin-top: 2.5rem;
 }
 
-/* ── Collapsible publication subsections (native <details>) ──
-   Kept visually identical to the old <h3> headings when open;
-   only a small chevron is appended as the toggle affordance.       */
+/* ── Collapsible publication subsections (native <details>) ── */
 .pub-section > summary.subsection-title {
   cursor: pointer;
-  list-style: none;          /* remove default disclosure triangle */
+  list-style: none;
   user-select: none;
 }
 .pub-section > summary.subsection-title::-webkit-details-marker {
-  display: none;             /* WebKit/Safari default triangle */
+  display: none;
 }
 .pub-section > summary.subsection-title::after {
   content: "";
@@ -444,7 +471,7 @@ section.alt-bg {
   margin-left: 0.55em;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
-  transform: rotate(45deg);        /* chevron pointing down when open */
+  transform: rotate(45deg);
   opacity: 0.5;
   vertical-align: middle;
   position: relative;
@@ -452,7 +479,7 @@ section.alt-bg {
   transition: transform 0.2s ease;
 }
 .pub-section:not([open]) > summary.subsection-title::after {
-  transform: rotate(-45deg);       /* chevron points right when collapsed */
+  transform: rotate(-45deg);
 }
 .pub-section > summary.subsection-title:focus-visible {
   outline: 2px solid var(--accent);
@@ -465,7 +492,7 @@ section.alt-bg {
   cursor: pointer;
   list-style: none;
   user-select: none;
-  margin-top: 0;             /* inter-section gap handled by the wrapper below */
+  margin-top: 0;
 }
 .talks-section > summary.talks-subheading::-webkit-details-marker {
   display: none;
@@ -478,7 +505,7 @@ section.alt-bg {
   margin-left: 0.55em;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
-  transform: rotate(45deg);        /* chevron pointing down when open */
+  transform: rotate(45deg);
   opacity: 0.5;
   vertical-align: middle;
   position: relative;
@@ -486,7 +513,7 @@ section.alt-bg {
   transition: transform 0.2s ease;
 }
 .talks-section:not([open]) > summary.talks-subheading::after {
-  transform: rotate(-45deg);       /* chevron points right when collapsed */
+  transform: rotate(-45deg);
 }
 .talks-section > summary.talks-subheading:focus-visible {
   outline: 2px solid var(--accent);
@@ -494,7 +521,7 @@ section.alt-bg {
   border-radius: 4px;
 }
 .talks-section + .talks-section {
-  margin-top: 1.75rem;             /* preserves the original gap before "Past Events" */
+  margin-top: 1.75rem;
 }
 
 /* ── Teaching (card grid, distinct from the timeline) ── */
@@ -516,8 +543,8 @@ section.alt-bg {
   transition: box-shadow 0.15s, border-color 0.15s;
 }
 .teaching-card:hover {
-  box-shadow: 0 3px 12px rgba(0,0,0,0.07);
-  border-color: rgba(74, 111, 165, 0.4);
+  box-shadow: 0 3px 12px var(--dropdown-shadow);
+  border-color: var(--accent);
 }
 
 .teaching-year {
@@ -525,7 +552,7 @@ section.alt-bg {
   font-weight: 700;
   letter-spacing: 0.03em;
   color: var(--accent-dark);
-  background: rgba(74, 111, 165, 0.12);
+  background: var(--accent-subtle);
   border-radius: 20px;
   padding: 1px 0.65em;
 }
@@ -565,7 +592,8 @@ section.alt-bg {
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
-  min-width: 58px;
+  min-width: 70px;
+  font-variant-numeric: tabular-nums;
 }
 
 .talk-info {
@@ -589,9 +617,9 @@ section.alt-bg {
   font-weight: 600;
   padding: 1px 8px;
   border-radius: 20px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--badge-bg);
   color: var(--text-muted);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--badge-border);
   white-space: nowrap;
 }
 
@@ -678,7 +706,7 @@ button.pub-badge {
 }
 
 .modal-box {
-  background: #fff;
+  background: var(--surface);
   border-radius: 10px;
   box-shadow: 0 16px 48px rgba(0,0,0,0.18);
   width: 100%;
@@ -718,13 +746,14 @@ button.pub-badge {
 .modal-pre {
   margin: 0;
   padding: 1.25rem;
-  background: #f5f6f9;
+  background: var(--code-bg);
   font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
   font-size: 0.8rem;
   line-height: 1.6;
   white-space: pre;
   overflow-x: auto;
   border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 
 .modal-footer {
@@ -741,7 +770,7 @@ button.pub-badge {
   font-size: 0.85rem;
   font-weight: 600;
   background: var(--accent);
-  color: #fff;
+  color: var(--btn-text);
   border: none;
   border-radius: 6px;
   padding: 0.45rem 1rem;
@@ -753,6 +782,7 @@ button.pub-badge {
 }
 .copy-btn.copied {
   background: #2d6a4f;
+  color: #ffffff;
 }
 
 /* ── About text fill ── */
@@ -763,7 +793,8 @@ button.pub-badge {
 
 /* ── Secondary page first sections (cv.html, events.html) ── */
 #education,
-#upcoming {
+#upcoming,
+#download {
   padding-top: calc(var(--nav-h) + 4rem);
 }
 
@@ -778,14 +809,14 @@ button.pub-badge {
   align-items: center;
   gap: 0.5rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--btn-text);
   font-weight: 600;
   font-size: 0.95rem;
   padding: 0.65rem 1.75rem;
   border-radius: 8px;
   transition: background 0.15s, transform 0.1s;
 }
-.cv-button:hover { background: var(--accent-dark); color: #fff; transform: translateY(-1px); }
+.cv-button:hover { background: var(--accent-dark); color: var(--btn-text); transform: translateY(-1px); }
 
 /* ── "See all" link below truncated lists ── */
 .see-all-link {
@@ -808,13 +839,93 @@ button.pub-badge {
 
 /* ── Footer ── */
 footer {
-  background: var(--text);
-  color: rgba(255,255,255,0.72);
+  background: var(--footer-bg);
+  color: var(--footer-text);
   font-size: 0.82rem;
-  padding: 1.5rem 0;
+  padding: 2.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 .footer-inner {
   text-align: center;
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.footer-links a {
+  color: var(--footer-text);
+  font-size: 1.1rem;
+  transition: color 0.15s;
+}
+.footer-links a:hover {
+  color: #ffffff;
+}
+
+/* ── Scroll animations ── */
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.fade-in-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Theme toggle ── */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-hover);
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --accent:            #4ecdc4;
+  --accent-dark:       #3db8b0;
+  --text:              #e0e4e8;
+  --text-muted:        #8b92a0;
+  --bg:                #0f1419;
+  --bg-alt:            #161b22;
+  --border:            #2a2f38;
+  --nav-bg:            rgba(15, 20, 25, 0.92);
+  --nav-bg-mobile:     rgba(22, 27, 34, 0.97);
+  --surface:           #1a1f27;
+  --code-bg:           #1a1f27;
+  --footer-bg:         #0a0e12;
+  --footer-text:       rgba(224, 228, 232, 0.6);
+  --btn-text:          #0f1419;
+  --accent-subtle:     rgba(78, 205, 196, 0.10);
+  --accent-hover:      rgba(78, 205, 196, 0.08);
+  --badge-bg:          rgba(255, 255, 255, 0.06);
+  --badge-border:      rgba(255, 255, 255, 0.12);
+  --badge-hover-bg:    rgba(255, 255, 255, 0.12);
+  --badge-hover-border: rgba(255, 255, 255, 0.20);
+  --photo-shadow:      rgba(0, 0, 0, 0.30);
+  --dropdown-shadow:   rgba(0, 0, 0, 0.30);
+}
+
+[data-theme="dark"] .about-photo {
+  filter: brightness(0.9) contrast(1.05);
 }
 
 /* ── Mobile ── */
@@ -834,13 +945,18 @@ footer {
     order: 2;
   }
 
+  .theme-toggle {
+    margin-left: auto;
+    order: 1;
+  }
+
   .nav-links {
     display: none;
     position: fixed;
     top: var(--nav-h);
     left: 0;
     right: 0;
-    background: rgba(255,255,255,0.97);
+    background: var(--nav-bg-mobile);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     flex-direction: column;
@@ -848,7 +964,7 @@ footer {
     padding: 1rem 1.5rem 1.5rem;
     border-bottom: 1px solid var(--border);
     gap: 0.25rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px var(--dropdown-shadow);
   }
 
   .nav-links.open {

@@ -69,12 +69,27 @@ function renderPubLinks(pub) {
   return links + citeBtn;
 }
 
+function getTitleLink(pub) {
+  const links = pub.links || {};
+  if (pub.type === 'preprint') return links.arxiv || links.ArXiv || null;
+  if (pub.type === 'thesis') return links.PDF || links.pdf || null;
+  for (const [key, url] of Object.entries(links)) {
+    const k = key.toLowerCase();
+    if (k !== 'arxiv' && k !== 'code' && url) return url;
+  }
+  return links.arxiv || links.ArXiv || null;
+}
+
 function renderPublication(pub) {
   const authors = pub.authors.map(renderAuthor).join(', ');
   const venue   = pub.venue ? `<p class="pub-venue">${pub.venue}</p>` : '';
+  const link    = getTitleLink(pub);
+  const title   = link
+    ? `<a href="${link}" target="_blank" rel="noopener" class="pub-title-link">${pub.title}</a>`
+    : pub.title;
   return `
     <article class="pub-card" data-cite-key="${pub.id}">
-      <p class="pub-title">${pub.title}</p>
+      <p class="pub-title">${title}</p>
       <p class="pub-authors">${authors}</p>
       ${venue}
       <div class="pub-links">${renderPubLinks(pub)}</div>
@@ -146,7 +161,8 @@ async function fetchText(path) {
 }
 
 function showError(el, msg) {
-  el.innerHTML = `<p class="loading-msg" style="color:#c0392b">${msg}</p>`;
+  const tag = el.tagName === 'UL' ? 'li' : 'p';
+  el.innerHTML = `<${tag} class="loading-msg" style="color:#c0392b">${msg}</${tag}>`;
 }
 
 /* ════════════════════════════════════════════════════
@@ -322,6 +338,34 @@ document.addEventListener('click', e => {
 });
 
 /* ════════════════════════════════════════════════════
+   Theme toggle (dark / light)
+   ════════════════════════════════════════════════════ */
+
+const themeToggle = document.getElementById('theme-toggle');
+if (themeToggle) {
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    const icon = themeToggle.querySelector('i');
+    if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = theme === 'dark' ? '#0f1419' : '#ffffff';
+  };
+
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    applyTheme(saved);
+  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+}
+
+/* ════════════════════════════════════════════════════
    Active nav link (index.html only)
    ════════════════════════════════════════════════════ */
 
@@ -419,6 +463,28 @@ copyBtn.addEventListener('click', () => {
     }, 2000);
   });
 });
+
+/* ════════════════════════════════════════════════════
+   Scroll-triggered fade-in animations
+   ════════════════════════════════════════════════════ */
+
+document.querySelectorAll('section').forEach(section => {
+  const rect = section.getBoundingClientRect();
+  if (rect.top >= window.innerHeight) {
+    section.classList.add('fade-in-section');
+  }
+});
+
+const fadeObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('is-visible');
+      fadeObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.fade-in-section').forEach(el => fadeObserver.observe(el));
 
 /* ════════════════════════════════════════════════════
    Bootstrap: load shared data, then render page content
