@@ -53,13 +53,13 @@
     "id": "pub9",
     "type": "preprint",
     "authors": [
-      { "name": "Tim van Beeck", "self": true },
+      { "name": "Tim van Beeck", "self": true }
     ],
     "title": "A hybrid C^{0}-interior penalty method for the nematic Helmholtz--Korteweg equation",
     "venue": "Preprint (2026)",
     "citekey": "vanbeeck2026hybridc0interiorpenaltymethod",
     "links": {
-      "arxiv": "https://arxiv.org/2606.25642", 
+      "arxiv": "https://arxiv.org/abs/2606.25642",
       "code": "https://doi.org/10.5281/zenodo.20761015"
     }
   },
