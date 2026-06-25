@@ -22,6 +22,13 @@
       "url": "https://www.tuwien.at/en/mg/asc/event/cmam2026"
     },
     {
+      "date": "Jul 2026",
+      "name": "WIAS",
+      "location": "Berlin, Germany",
+      "role": "Seminar Talk", 
+      "url": "https://www.wias-berlin.de/seminars/nummath/"
+    },
+    {
       "date": "Jun 2026",
       "name": "NGSolve Usermeeting",
       "location": "Winterthur, Switzerland",
