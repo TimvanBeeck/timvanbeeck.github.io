@@ -50,6 +50,23 @@
     }
   },
   {
+    "id": "pub1",
+    "type": "peer-review",
+    "authors": [
+      { "name": "Tim Brüers" },
+      { "name": "Christoph Lehrenfeld" },
+      { "name": "Tim van Beeck", "self": true },
+      { "name": "Max Wardetzky" }
+    ],
+    "title": "Releasing the pressure: High-order surface flow discretizations via discrete Helmholtz-Hodge decompositions",
+    "venue": "Accepted in: Computer Methods in Applied Mechanics and Engineering (2026)",
+    "citekey": "bruers2026releasing",
+    "links": {
+      "arxiv": "https://arxiv.org/abs/2603.27714", 
+      "code": "https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/VDG40Z"
+    }
+  },
+  {
     "id": "pub9",
     "type": "preprint",
     "authors": [
@@ -61,23 +78,6 @@
     "links": {
       "arxiv": "https://arxiv.org/abs/2606.25642",
       "code": "https://doi.org/10.5281/zenodo.20761015"
-    }
-  },
-  {
-    "id": "pub1",
-    "type": "preprint",
-    "authors": [
-      { "name": "Tim Brüers" },
-      { "name": "Christoph Lehrenfeld" },
-      { "name": "Tim van Beeck", "self": true },
-      { "name": "Max Wardetzky" }
-    ],
-    "title": "Releasing the pressure: High-order surface flow discretizations via discrete Helmholtz-Hodge decompositions",
-    "venue": "Preprint (2026)",
-    "citekey": "bruers2026releasing",
-    "links": {
-      "arxiv": "https://arxiv.org/abs/2603.27714", 
-      "code": "https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/VDG40Z"
     }
   },
   {
