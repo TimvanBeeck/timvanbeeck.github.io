@@ -42,9 +42,10 @@
       { "name": "Tim van Beeck", "self": true }
     ],
     "title": "Variational data assimilation for the wave equation in heterogeneous media",
-    "venue": "Accepted in: Communications on Applied Mathematics and Computation (2026)",
+    "venue": "Communications on Applied Mathematics and Computation (2026)",
     "citekey": "burman2025variational",
     "links": {
+      "CAMC": "https://link.springer.com/article/10.1007/s42967-026-00583-w",
       "arxiv": "https://arxiv.org/pdf/2509.13108",
       "code": "https://github.com/TimvanBeeck/waveUC_discCoefs"
     }
