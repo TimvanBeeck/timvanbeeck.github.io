@@ -27,16 +27,17 @@
       "location": "Berlin, Germany",
       "role": "Seminar Talk", 
       "url": "https://www.wias-berlin.de/seminars/nummath/"
-    },
+    }
+  ],
+  "past": [
     {
       "date": "Jun 2026",
       "name": "NGSolve Usermeeting",
       "location": "Winterthur, Switzerland",
-      "role": "Speaker", 
+      "role": "Speaker",
+      "slides": "https://ngs26-slides-e1e94d.pages.gwdg.de/#1",
       "url": "https://www.zhaw.ch/en/engineering/institutes-centres/iamp/events/ngsolve-user-meeting-2026"
-    }
-  ],
-  "past": [
+    },
     {
       "date": "Oct 2025",
       "name": "Oxford Numerical Analysis Seminar",
