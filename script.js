@@ -125,8 +125,11 @@ function renderTalkItem(event) {
   const roleTag = event.role
     ? `<span class="talk-role-badge">${event.role}</span>`
     : '';
+  const slidesHref = event.slides
+    ? (/^https?:\/\//.test(event.slides) ? event.slides : `assets/slides/${event.slides}`)
+    : '';
   const slidesBtn = event.slides
-    ? `<a href="assets/slides/${event.slides}" target="_blank" rel="noopener" class="talk-slides-btn">Slides</a>`
+    ? `<a href="${slidesHref}" target="_blank" rel="noopener" class="talk-slides-btn">Slides</a>`
     : '';
   const name = event.url
     ? `<a href="${event.url}" target="_blank" rel="noopener" class="talk-name talk-name-link">${event.name}</a>`
