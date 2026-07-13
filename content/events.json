@@ -20,16 +20,17 @@
       "location": "Vienna, Austria",
       "role": "Speaker", 
       "url": "https://www.tuwien.at/en/mg/asc/event/cmam2026"
-    },
+    }
+  ],
+  "past": [
     {
       "date": "Jul 2026",
       "name": "WIAS",
       "location": "Berlin, Germany",
       "role": "Seminar Talk", 
+      "slides": "WIAS26.pdf",
       "url": "https://www.wias-berlin.de/seminars/nummath/"
-    }
-  ],
-  "past": [
+    },
     {
       "date": "Jun 2026",
       "name": "NGSolve Usermeeting",
