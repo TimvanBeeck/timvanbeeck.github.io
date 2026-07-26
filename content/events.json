@@ -13,16 +13,16 @@
       "location": "Vienna, Austria",
       "role": "Speaker", 
       "url": "https://trefftz2026.univie.ac.at/"
-    },
+    }  ],
+  "past": [
     {
       "date": "Jul 2026",
       "name": "CMAM 2026",
       "location": "Vienna, Austria",
       "role": "Speaker", 
+      "slides": "cmam26.pdf",
       "url": "https://www.tuwien.at/en/mg/asc/event/cmam2026"
-    }
-  ],
-  "past": [
+    },
     {
       "date": "Jul 2026",
       "name": "WIAS",
