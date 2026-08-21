@@ -1,0 +1,4679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nematic drum</title>
+<!-- forwardDeckNav: hands the deck back the keys and background clicks this widget does not use -->
+<script src="../js/plot-embed.js"></script>
+<style>
+  :root {
+    --ink: #1c1f22;
+    --soft: #6a747e;
+    --line: #dfe3e8;
+    --wash: #f3f5f7;
+    --accent: #235f96;
+    --font: 'Source Sans 3', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'Fira Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: #fff; color: var(--ink); font-family: var(--font);
+  }
+  #stage {
+    display: grid; grid-template-columns: 1fr 19rem; gap: 1.4rem;
+    height: 100%; padding: 0.6rem 0.8rem;
+  }
+
+  /* ---- the plate ---- */
+  #plate { position: relative; min-width: 0; }
+  #board { width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
+  #board:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #prompt, #solving {
+    position: absolute; left: 50%; bottom: 0.2rem; transform: translateX(-50%);
+    margin: 0; font-size: 0.78rem; color: var(--soft); letter-spacing: 0.04em;
+  }
+  #solving { background: rgba(255,255,255,0.9); padding: 0.1em 0.6em; }
+
+  /* ---- the panel ---- */
+  #panel {
+    display: flex; flex-direction: column; gap: 0.55rem;
+    min-width: 0; font-size: 0.82rem;
+  }
+  #equation {
+    margin: 0; padding-bottom: 0.4rem; border-bottom: 1px solid var(--line);
+    font-family: var(--mono); font-size: 0.78rem; color: var(--ink);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .chip {
+    font: inherit; color: var(--ink); background: #fff;
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 0.15em 0.55em; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .dial { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.15rem 0.5rem; }
+  .dial label { grid-column: 1; color: var(--soft); }
+  .dial output { grid-column: 2; font-family: var(--mono); font-size: 0.76rem; }
+  .dial input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+  .dial--lead label { color: var(--ink); font-weight: 600; }
+
+  #readout { margin: 0; color: var(--soft); line-height: 1.35; }
+  #readout strong { color: var(--ink); font-weight: 600; font-family: var(--mono); }
+
+  #modes-caption { margin: 0.2rem 0 0; font-size: 0.7rem; color: var(--soft); }
+  #modes {
+    list-style: none; margin: 0; padding: 0; min-height: 0; overflow: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.4rem;
+  }
+  #modes button {
+    display: flex; justify-content: space-between; gap: 0.4rem; width: 100%;
+    font: inherit; font-size: 0.74rem; color: var(--soft);
+    background: none; border: 0; border-bottom: 1px solid var(--line);
+    padding: 0.1em 0.1em; cursor: pointer; text-align: left;
+  }
+  #modes button:hover { color: var(--ink); }
+  #modes button[aria-pressed="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  #modes .hz { font-family: var(--mono); }
+
+  #foot { display: flex; align-items: center; gap: 0.5rem; margin-top: auto; }
+  #credit { margin: 0; font-size: 0.68rem; color: var(--soft); }
+  #credit a { color: inherit; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="plate">
+    <canvas id="board" tabindex="0" role="application"
+            aria-label="The drum. Click it to strike it."></canvas>
+    <p id="prompt">tap the drum</p>
+    <p id="solving" hidden>building the mesh</p>
+  </div>
+
+  <aside id="panel">
+    <p id="equation">&alpha;&#8710;&sup2;u + &beta;&nabla;&middot;&nabla;(n&#7488;(&#8459;u)n) &minus; &#8710;u = k&sup2;u</p>
+
+    <div class="chips" id="shapes"></div>
+
+    <div class="dial dial--lead">
+      <label for="ctl-theta">director angle &theta;</label>
+      <output id="out-theta">0&deg;</output>
+      <input type="range" id="ctl-theta" min="0" max="180" step="1" value="0">
+    </div>
+    <div class="dial">
+      <label for="ctl-beta">nematic &beta;</label>
+      <output id="out-beta">8.7e&minus;2</output>
+      <input type="range" id="ctl-beta" min="0" max="900" step="1" value="870">
+    </div>
+    <div class="dial">
+      <label for="ctl-alpha">capillarity &alpha;</label>
+      <output id="out-alpha">1.0e&minus;1</output>
+      <input type="range" id="ctl-alpha" min="0" max="1000" step="1" value="1000">
+    </div>
+
+    <p id="readout"></p>
+    <p id="modes-caption">modes, in hertz &mdash; press one to hear it alone</p>
+    <ol id="modes"></ol>
+
+    <div id="foot">
+      <button type="button" class="chip" id="btn-sound" aria-pressed="true">sound on</button>
+      <p id="credit">from <a href="https://www.uzerbinati.eu/drum/" target="_blank"
+         rel="noopener">nematic drum</a></p>
+    </div>
+  </aside>
+</div>
+
+<!-- The solver, as source: handed to a Worker through a blob url, which is the
+     one way to start a worker from a page opened over file://. -->
+<script id="drum-worker" type="text/plain">
+var __load = (function () {
+/* Bundled from nematicDrum/src by code/esbundle.py -- do not edit here. */
+var __defs = {}, __cache = {};
+function __req(id) {
+  if (!(id in __cache)) __cache[id] = __defs[id]();
+  return __cache[id];
+}
+__defs['geom/polygon.js'] = function () {
+/**
+ * Simple-polygon helpers. A polygon is an array of `{ x, y }` vertices,
+ * implicitly closed (no repeated last point).
+ */
+
+function signedArea(poly) {
+  let s = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    s += (poly[j].x - poly[i].x) * (poly[j].y + poly[i].y);
+  }
+  return s / 2;
+}
+
+const area = (poly) => Math.abs(signedArea(poly));
+
+/** Returns the polygon wound counter-clockwise (positive signed area). */
+function ensureCCW(poly) {
+  return signedArea(poly) < 0 ? poly.slice().reverse() : poly.slice();
+}
+
+function perimeter(poly) {
+  let p = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    p += Math.hypot(poly[i].x - poly[j].x, poly[i].y - poly[j].y);
+  }
+  return p;
+}
+
+function bbox(poly) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of poly) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+function centroid(poly) {
+  let cx = 0;
+  let cy = 0;
+  let a = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const cross = poly[j].x * poly[i].y - poly[i].x * poly[j].y;
+    a += cross;
+    cx += (poly[j].x + poly[i].x) * cross;
+    cy += (poly[j].y + poly[i].y) * cross;
+  }
+  if (Math.abs(a) < 1e-300) return { x: poly[0].x, y: poly[0].y };
+  return { x: cx / (3 * a), y: cy / (3 * a) };
+}
+
+/** Crossing-number point-in-polygon test. Boundary cases are not guaranteed. */
+function pointInPolygon(x, y, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x;
+    const yi = poly[i].y;
+    const xj = poly[j].x;
+    const yj = poly[j].y;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** Closest point to (x, y) on segment ab, plus the squared distance to it. */
+function closestOnSegment(x, y, ax, ay, bx, by) {
+  const vx = bx - ax;
+  const vy = by - ay;
+  const len2 = vx * vx + vy * vy;
+  let t = len2 === 0 ? 0 : ((x - ax) * vx + (y - ay) * vy) / len2;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const px = ax + t * vx;
+  const py = ay + t * vy;
+  const dx = x - px;
+  const dy = y - py;
+  return { x: px, y: py, d2: dx * dx + dy * dy };
+}
+
+/** Nearest point on the polygon's boundary. */
+function projectToBoundary(x, y, poly) {
+  let best = null;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const c = closestOnSegment(x, y, poly[j].x, poly[j].y, poly[i].x, poly[i].y);
+    if (!best || c.d2 < best.d2) best = c;
+  }
+  return best;
+}
+
+function distanceToBoundary(x, y, poly) {
+  return Math.sqrt(projectToBoundary(x, y, poly).d2);
+}
+
+/** Resamples the closed boundary at roughly `spacing` apart. */
+function resampleClosed(poly, spacing) {
+  const out = [];
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % n];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const steps = Math.max(1, Math.round(len / spacing));
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  return out;
+}
+
+/**
+ * Ramer-Douglas-Peucker simplification, for turning a noisy freehand stroke
+ * into a polygon with a manageable vertex count.
+ */
+function simplify(points, epsilon) {
+  if (points.length < 3) return points.slice();
+
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1;
+  keep[points.length - 1] = 1;
+
+  const stack = [[0, points.length - 1]];
+  while (stack.length) {
+    const [first, last] = stack.pop();
+    if (last <= first + 1) continue;
+    const a = points[first];
+    const b = points[last];
+    let worst = -1;
+    let worstIdx = -1;
+    for (let i = first + 1; i < last; i++) {
+      const c = closestOnSegment(points[i].x, points[i].y, a.x, a.y, b.x, b.y);
+      if (c.d2 > worst) {
+        worst = c.d2;
+        worstIdx = i;
+      }
+    }
+    if (Math.sqrt(worst) > epsilon) {
+      keep[worstIdx] = 1;
+      stack.push([first, worstIdx], [worstIdx, last]);
+    }
+  }
+
+  const out = [];
+  for (let i = 0; i < points.length; i++) if (keep[i]) out.push(points[i]);
+  return out;
+}
+
+/**
+ * Normalises a polygon into a canonical frame: centred on the origin and scaled
+ * so the enclosed area is 1. This makes spectra comparable between shapes,
+ * because Laplacian eigenvalues scale like 1/area - without it, "hear the
+ * shape" would mostly be hearing the size.
+ */
+function normalizeToUnitArea(poly) {
+  const c = centroid(poly);
+  const a = area(poly);
+  if (a <= 0) return poly.slice();
+  const s = 1 / Math.sqrt(a);
+  return poly.map((p) => ({ x: (p.x - c.x) * s, y: (p.y - c.y) * s }));
+}
+
+/** Removes consecutive duplicate/near-duplicate vertices. */
+function dedupe(poly, eps = 1e-9) {
+  const out = [];
+  for (const p of poly) {
+    const last = out[out.length - 1];
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > eps) out.push(p);
+  }
+  while (
+    out.length > 1 &&
+    Math.hypot(out[0].x - out[out.length - 1].x, out[0].y - out[out.length - 1].y) <= eps
+  ) {
+    out.pop();
+  }
+  return out;
+}
+
+/** True when segments ab and cd cross at a point interior to both. */
+function properCross(a, b, c, d) {
+  const o = (p, q, r) => (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+  const d1 = o(a, b, c);
+  const d2 = o(a, b, d);
+  const d3 = o(c, d, a);
+  const d4 = o(c, d, b);
+  const eps = 1e-12;
+  if (Math.abs(d1) < eps || Math.abs(d2) < eps || Math.abs(d3) < eps || Math.abs(d4) < eps) {
+    return false;
+  }
+  return d1 * d2 < 0 && d3 * d4 < 0;
+}
+
+/**
+ * True when no two non-adjacent edges cross. The mesher assumes a simple
+ * polygon, so freehand strokes have to be checked before they are accepted.
+ */
+function isSimple(poly) {
+  const n = poly.length;
+  if (n < 3) return false;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % n];
+    for (let j = i + 1; j < n; j++) {
+      if (i === 0 && j === n - 1) continue; // adjacent through the wrap
+      if (j === i + 1) continue; // adjacent
+      const c = poly[j];
+      const d = poly[(j + 1) % n];
+      if (properCross(a, b, c, d)) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Douglas-Peucker for a *closed* curve.
+ *
+ * Running the open-polyline version on a loop is subtly wrong: it always keeps
+ * the first and last points, which privileges wherever the stroke happened to
+ * start and preserves any wobble there as a permanent corner. Splitting the loop
+ * into two chains at two well-separated points removes that bias - the retained
+ * split points are genuine extremes of the shape rather than an artefact of when
+ * the pointer went down.
+ */
+function simplifyClosed(points, epsilon) {
+  const n = points.length;
+  if (n < 4) return points.slice();
+
+  let cx = 0;
+  let cy = 0;
+  for (const p of points) {
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= n;
+  cy /= n;
+
+  // Farthest point from the centroid, then farthest point from that.
+  let iA = 0;
+  let bestA = -1;
+  for (let i = 0; i < n; i++) {
+    const d = (points[i].x - cx) ** 2 + (points[i].y - cy) ** 2;
+    if (d > bestA) {
+      bestA = d;
+      iA = i;
+    }
+  }
+  let iB = iA;
+  let bestB = -1;
+  for (let i = 0; i < n; i++) {
+    const d = (points[i].x - points[iA].x) ** 2 + (points[i].y - points[iA].y) ** 2;
+    if (d > bestB) {
+      bestB = d;
+      iB = i;
+    }
+  }
+  if (iA === iB) return simplify(points, epsilon);
+
+  const chain = (from, to) => {
+    const out = [];
+    let i = from;
+    for (;;) {
+      out.push(points[i]);
+      if (i === to) break;
+      i = (i + 1) % n;
+    }
+    return out;
+  };
+
+  const first = simplify(chain(iA, iB), epsilon);
+  const second = simplify(chain(iB, iA), epsilon);
+  // Both chains include their shared endpoints, so drop the duplicates.
+  return first.concat(second.slice(1, -1));
+}
+
+/**
+ * The single gate every candidate outline passes through before the mesher sees
+ * it: simplify, bound the vertex count, then check it is actually a drum.
+ *
+ * Two very different producers feed this - a freehand pointer trace and a sampled
+ * formula curve - and they used to be one validator and one plan for a second.
+ * They share it instead, because the checks are properties of the *outline* and
+ * not of how it was made: too few vertices, not enough area to be a membrane, and
+ * self-crossing, which is the fatal one since a crossing outline has no
+ * well-defined interior and there is nothing to solve on.
+ *
+ * Returns `{ ok: true, polygon }` (counter-clockwise) or `{ ok: false, reason }`
+ * with `reason` one of 'short' | 'degenerate' | 'area' | 'crossing'. The reason is
+ * a code rather than a sentence so each caller can word it for its own surface: a
+ * stroke that crosses itself and a formula that crosses itself need different
+ * advice.
+ */
+function cleanClosedOutline(
+  points,
+  { tolerance = 0.006, minArea = 0.004, maxVertices = 220, minPoints = 8 } = {},
+) {
+  if (!points || points.length < minPoints) return { ok: false, reason: 'short' };
+
+  let poly = dedupe(points, 1e-6);
+  poly = dedupe(simplifyClosed(poly, tolerance), tolerance * 0.5);
+  if (poly.length < 3) return { ok: false, reason: 'degenerate' };
+
+  // Coarsen progressively rather than refuse. A 720-sample analytic curve and a
+  // dense pointer trace both arrive well over the budget, and throwing away
+  // detail the mesh could not resolve anyway costs nothing.
+  let tol = tolerance;
+  while (poly.length > maxVertices && tol < 0.2) {
+    tol *= 1.6;
+    poly = dedupe(simplifyClosed(poly, tol), tol * 0.5);
+  }
+
+  if (area(poly) < minArea) return { ok: false, reason: 'area' };
+  if (!isSimple(poly)) return { ok: false, reason: 'crossing' };
+  return { ok: true, polygon: ensureCCW(poly) };
+}
+
+return { signedArea, area, ensureCCW, perimeter, bbox, centroid, pointInPolygon, projectToBoundary, distanceToBoundary, resampleClosed, simplify, normalizeToUnitArea, dedupe, isSimple, simplifyClosed, cleanClosedOutline };
+};
+__defs['geom/mesh.js'] = function () {
+/**
+ * Triangulating an arbitrary drawn shape.
+ *
+ * Approach: overlay a uniform lattice of right-isosceles triangles, keep the
+ * triangles whose centroid falls inside the polygon, then project the resulting
+ * mesh's boundary nodes onto the true polygon outline.
+ *
+ * Why not Delaunay: we do not need it. The interior is already a perfectly good
+ * structured mesh, and a lattice has two properties we actively want.
+ *
+ *   1. Axis-aligned and 45-degree edges are represented *exactly*. That covers
+ *      squares, rectangles, L-shapes, and - importantly - the
+ *      Gordon-Webb-Wolpert isospectral drums, which are built from right
+ *      isosceles triangles. Their equal spectra therefore come out equal for
+ *      real geometric reasons rather than by luck.
+ *   2. Node numbering is naturally banded, which keeps the Cholesky cheap.
+ *
+ * Curved boundaries get the snapped polyline, an O(h^2) approximation of the
+ * true outline. `stats` reports enough for the UI to be honest about that.
+ */
+
+const { area, bbox, dedupe, ensureCCW, pointInPolygon, projectToBoundary, } = __req('geom/polygon.js');
+
+function triangleArea(nodes, a, b, c) {
+  return (
+    ((nodes[b].x - nodes[a].x) * (nodes[c].y - nodes[a].y) -
+      (nodes[c].x - nodes[a].x) * (nodes[b].y - nodes[a].y)) /
+    2
+  );
+}
+
+/** Drops unused nodes and renumbers triangles. */
+function compact(nodes, tris) {
+  const used = new Int32Array(nodes.length).fill(-1);
+  for (const t of tris) for (const v of t) used[v] = 0;
+  const outNodes = [];
+  for (let i = 0; i < nodes.length; i++) {
+    if (used[i] === 0) {
+      used[i] = outNodes.length;
+      outNodes.push(nodes[i]);
+    }
+  }
+  const outTris = tris.map((t) => [used[t[0]], used[t[1]], used[t[2]]]);
+  return { nodes: outNodes, tris: outTris };
+}
+
+/** Nodes lying on an edge that belongs to only one triangle. */
+function findBoundaryNodes(nodeCount, tris) {
+  const counts = new Map();
+  const bump = (a, b) => {
+    const key = a < b ? a * nodeCount + b : b * nodeCount + a;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  };
+  for (const [a, b, c] of tris) {
+    bump(a, b);
+    bump(b, c);
+    bump(c, a);
+  }
+  const flags = new Uint8Array(nodeCount);
+  for (const [key, count] of counts) {
+    if (count !== 1) continue;
+    const a = Math.floor(key / nodeCount);
+    const b = key % nodeCount;
+    flags[a] = 1;
+    flags[b] = 1;
+  }
+  return flags;
+}
+
+/** The `[a, b]` edges that belong to exactly one triangle, i.e. the outline. */
+function findBoundaryEdges(nodeCount, tris) {
+  const counts = new Map();
+  const bump = (a, b) => {
+    const key = a < b ? a * nodeCount + b : b * nodeCount + a;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  };
+  for (const [a, b, c] of tris) {
+    bump(a, b);
+    bump(b, c);
+    bump(c, a);
+  }
+  const edges = [];
+  for (const [key, count] of counts) {
+    if (count !== 1) continue;
+    edges.push([Math.floor(key / nodeCount), key % nodeCount]);
+  }
+  return edges;
+}
+
+function nodeAdjacency(nodeCount, tris) {
+  const adj = Array.from({ length: nodeCount }, () => new Set());
+  for (const [a, b, c] of tris) {
+    adj[a].add(b).add(c);
+    adj[b].add(a).add(c);
+    adj[c].add(a).add(b);
+  }
+  return adj.map((s) => [...s]);
+}
+
+/** Keeps only the largest connected component, so the spectrum is one drum. */
+function largestComponent(nodes, tris) {
+  const adj = nodeAdjacency(nodes.length, tris);
+  const comp = new Int32Array(nodes.length).fill(-1);
+  let best = -1;
+  let bestSize = 0;
+  let next = 0;
+  for (let s = 0; s < nodes.length; s++) {
+    if (comp[s] !== -1) continue;
+    const id = next++;
+    let size = 0;
+    const stack = [s];
+    comp[s] = id;
+    while (stack.length) {
+      const v = stack.pop();
+      size++;
+      for (const w of adj[v]) {
+        if (comp[w] === -1) {
+          comp[w] = id;
+          stack.push(w);
+        }
+      }
+    }
+    if (size > bestSize) {
+      bestSize = size;
+      best = id;
+    }
+  }
+  if (next <= 1) return { tris, dropped: 0 };
+  const kept = tris.filter((t) => comp[t[0]] === best);
+  return { tris: kept, dropped: tris.length - kept.length };
+}
+
+/**
+ * @param {{x:number,y:number}[]} polygonIn simple closed polygon
+ * @param {object} [opts]
+ * @param {number} [opts.targetNodes] rough interior node budget
+ * @returns mesh with nodes, triangles, Dirichlet flags and an interior index map
+ */
+function buildMesh(polygonIn, { targetNodes = 2600, smoothPasses = 4, align = 0 } = {}) {
+  const poly = ensureCCW(dedupe(polygonIn));
+  if (poly.length < 3) throw new Error('A drum needs at least three corners.');
+  const polyArea = area(poly);
+  if (!(polyArea > 0)) throw new Error('That shape has no area.');
+
+  const box = bbox(poly);
+  if (!(box.width > 0) || !(box.height > 0)) throw new Error('That shape is flat.');
+
+  // Pick the cell size from the area budget, then nudge it so that the bounding
+  // box is spanned by a whole number of cells and the grid starts exactly on the
+  // box corner. For axis-aligned shapes (square, rectangle, L-shape) this makes
+  // the mesh land precisely on the true boundary, so no snapping is needed and
+  // the geometry is represented without error.
+  // Each cell contributes roughly two nodes (its corner plus its centre), so aim
+  // the cell size at half the node budget.
+  const h0 = Math.sqrt((2 * polyArea) / Math.max(64, targetNodes));
+  let h;
+  if (align > 0) {
+    // The caller knows its geometry sits on a grid of pitch `align` (integer
+    // coordinates, say). Choosing h to divide that pitch exactly puts every
+    // polygon vertex on a lattice node, so nothing needs snapping and the domain
+    // is represented with zero geometric error. This is what makes the
+    // isospectral demonstration airtight rather than merely approximate.
+    h = align / Math.max(1, Math.round(align / h0));
+  } else {
+    // Otherwise span the bounding box with a whole number of cells, which makes
+    // axis-aligned outlines exact.
+    h = box.width / Math.max(2, Math.round(box.width / h0));
+  }
+  const cellsX = Math.max(2, Math.ceil(box.width / h - 1e-9));
+  const cellsY = Math.max(2, Math.ceil(box.height / h - 1e-9));
+
+  const originX = box.minX;
+  const originY = box.minY;
+  const nx = cellsX + 1;
+  const ny = cellsY + 1;
+
+  if (nx * ny > 2_000_000) throw new Error('Shape is too elongated to mesh at this resolution.');
+
+  // Lattice corner nodes, then one extra node at the centre of every cell.
+  let nodes = new Array(nx * ny + cellsX * cellsY);
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      nodes[j * nx + i] = { x: originX + i * h, y: originY + j * h };
+    }
+  }
+  const centreBase = nx * ny;
+  for (let j = 0; j < cellsY; j++) {
+    for (let i = 0; i < cellsX; i++) {
+      nodes[centreBase + j * cellsX + i] = {
+        x: originX + (i + 0.5) * h,
+        y: originY + (j + 0.5) * h,
+      };
+    }
+  }
+
+  // Split each cell into four triangles around its centre ("union jack"). Using
+  // both diagonals rather than one is what lets edges at +45 AND -45 degrees be
+  // represented exactly - the single-diagonal lattice silently staircases one of
+  // those directions, which showed up as a real error on the second Kac drum.
+  // It also removes the directional bias of a one-way lattice.
+  let tris = [];
+  for (let j = 0; j < cellsY; j++) {
+    for (let i = 0; i < cellsX; i++) {
+      const v00 = j * nx + i;
+      const v10 = j * nx + i + 1;
+      const v01 = (j + 1) * nx + i;
+      const v11 = (j + 1) * nx + i + 1;
+      const c = centreBase + j * cellsX + i;
+      for (const t of [
+        [v00, v10, c],
+        [v10, v11, c],
+        [v11, v01, c],
+        [v01, v00, c],
+      ]) {
+        const cx = (nodes[t[0]].x + nodes[t[1]].x + nodes[t[2]].x) / 3;
+        const cy = (nodes[t[0]].y + nodes[t[1]].y + nodes[t[2]].y) / 3;
+        if (pointInPolygon(cx, cy, poly)) tris.push(t);
+      }
+    }
+  }
+  if (tris.length === 0) throw new Error('Shape is too small or too thin to mesh.');
+
+  // Snap the mesh boundary onto the real outline, discarding anything that
+  // collapses or flips in the process.
+  const minArea = 1e-3 * h * h;
+  for (let pass = 0; pass < 4; pass++) {
+    ({ nodes, tris } = compact(nodes, tris));
+    const boundary = findBoundaryNodes(nodes.length, tris);
+    for (let i = 0; i < nodes.length; i++) {
+      if (!boundary[i]) continue;
+      const p = projectToBoundary(nodes[i].x, nodes[i].y, poly);
+      if (Math.hypot(p.x - nodes[i].x, p.y - nodes[i].y) <= 1.5 * h) {
+        nodes[i] = { x: p.x, y: p.y };
+      }
+    }
+    const kept = tris.filter((t) => Math.abs(triangleArea(nodes, t[0], t[1], t[2])) > minArea);
+    const dropped = tris.length - kept.length;
+    tris = kept;
+    if (dropped === 0) break;
+  }
+
+  // Snapping a lattice onto a curve leaves degenerate "ear" triangles: all three
+  // nodes end up on the boundary and the element collapses to a splinter. They
+  // carry almost no area but ruin the minimum angle and the conditioning.
+  // Removing them is safe precisely because they touch nothing but the boundary.
+  for (let pass = 0; pass < 6; pass++) {
+    const bflags = findBoundaryNodes(nodes.length, tris);
+    const before = tris.length;
+    tris = tris.filter((t) => {
+      if (!(bflags[t[0]] && bflags[t[1]] && bflags[t[2]])) return true;
+      // A healthy element here has area h^2/4; drop splinters below ~15% of that.
+      return Math.abs(triangleArea(nodes, t[0], t[1], t[2])) >= 0.04 * h * h;
+    });
+    if (tris.length === before) break;
+  }
+
+  ({ tris } = largestComponent(nodes, tris));
+  ({ nodes, tris } = compact(nodes, tris));
+  if (tris.length === 0) throw new Error('Shape is too small or too thin to mesh.');
+
+  // Consistent winding.
+  for (const t of tris) {
+    if (triangleArea(nodes, t[0], t[1], t[2]) < 0) {
+      const tmp = t[1];
+      t[1] = t[2];
+      t[2] = tmp;
+    }
+  }
+
+  let isBoundary = findBoundaryNodes(nodes.length, tris);
+
+  // Laplacian smoothing of interior nodes improves element quality where the
+  // lattice met the boundary. Reject any move that would invert a triangle.
+  const adj = nodeAdjacency(nodes.length, tris);
+  const incident = Array.from({ length: nodes.length }, () => []);
+  tris.forEach((t, ti) => {
+    incident[t[0]].push(ti);
+    incident[t[1]].push(ti);
+    incident[t[2]].push(ti);
+  });
+  // Boundary nodes get to slide *along* the outline. Projecting the lattice onto
+  // a curve leaves them unevenly spaced, and uneven boundary spacing is what
+  // produces the near-zero-angle slivers that wreck accuracy. Sliding evens them
+  // out while every node stays exactly on the true boundary.
+  const bEdges = findBoundaryEdges(nodes.length, tris);
+  const bNbr = Array.from({ length: nodes.length }, () => []);
+  for (const [a, b] of bEdges) {
+    bNbr[a].push(b);
+    bNbr[b].push(a);
+  }
+  // Pin nodes sitting on a genuine corner, or sliding would round it off. A
+  // vertex only counts as a corner if the outline actually turns sharply there:
+  // a finely tessellated circle has hundreds of vertices that each turn by a
+  // fraction of a degree, and treating those as corners would pin the entire
+  // boundary and defeat the smoothing.
+  const sharp = [];
+  for (let v = 0; v < poly.length; v++) {
+    const prev = poly[(v - 1 + poly.length) % poly.length];
+    const cur = poly[v];
+    const next = poly[(v + 1) % poly.length];
+    const a1 = Math.atan2(cur.y - prev.y, cur.x - prev.x);
+    const a2 = Math.atan2(next.y - cur.y, next.x - cur.x);
+    let turn = Math.abs(a2 - a1);
+    if (turn > Math.PI) turn = 2 * Math.PI - turn;
+    if (turn > 0.44) sharp.push(cur); // ~25 degrees
+  }
+  const nearCorner = new Uint8Array(nodes.length);
+  for (let i = 0; i < nodes.length; i++) {
+    if (!isBoundary[i]) continue;
+    for (const v of sharp) {
+      if (Math.hypot(nodes[i].x - v.x, nodes[i].y - v.y) < 0.34 * h) {
+        nearCorner[i] = 1;
+        break;
+      }
+    }
+  }
+
+  const tryMove = (i, target) => {
+    const old = nodes[i];
+    nodes[i] = target;
+    for (const ti of incident[i]) {
+      const t = tris[ti];
+      if (triangleArea(nodes, t[0], t[1], t[2]) <= minArea * 0.1) {
+        nodes[i] = old;
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const relax = 0.4;
+  for (let pass = 0; pass < smoothPasses; pass++) {
+    for (let i = 0; i < nodes.length; i++) {
+      if (!isBoundary[i] || nearCorner[i] || bNbr[i].length !== 2) continue;
+      const a = nodes[bNbr[i][0]];
+      const b = nodes[bNbr[i][1]];
+      const mx = nodes[i].x + relax * ((a.x + b.x) / 2 - nodes[i].x);
+      const my = nodes[i].y + relax * ((a.y + b.y) / 2 - nodes[i].y);
+      const p = projectToBoundary(mx, my, poly);
+      tryMove(i, { x: p.x, y: p.y });
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      if (isBoundary[i] || adj[i].length === 0) continue;
+      let sx = 0;
+      let sy = 0;
+      for (const w of adj[i]) {
+        sx += nodes[w].x;
+        sy += nodes[w].y;
+      }
+      tryMove(i, {
+        x: nodes[i].x + relax * (sx / adj[i].length - nodes[i].x),
+        y: nodes[i].y + relax * (sy / adj[i].length - nodes[i].y),
+      });
+    }
+  }
+
+  isBoundary = findBoundaryNodes(nodes.length, tris);
+
+  // Map node index -> unknown index (boundary nodes are not unknowns).
+  const interiorIndex = new Int32Array(nodes.length).fill(-1);
+  let interiorCount = 0;
+  for (let i = 0; i < nodes.length; i++) {
+    if (!isBoundary[i]) interiorIndex[i] = interiorCount++;
+  }
+  if (interiorCount === 0) {
+    throw new Error('Shape is too thin at this resolution - every node is on the edge.');
+  }
+
+  // Quality report.
+  let minAngle = Infinity;
+  let meshArea = 0;
+  for (const [a, b, c] of tris) {
+    meshArea += Math.abs(triangleArea(nodes, a, b, c));
+    const pts = [nodes[a], nodes[b], nodes[c]];
+    for (let k = 0; k < 3; k++) {
+      const p0 = pts[k];
+      const p1 = pts[(k + 1) % 3];
+      const p2 = pts[(k + 2) % 3];
+      const v1x = p1.x - p0.x;
+      const v1y = p1.y - p0.y;
+      const v2x = p2.x - p0.x;
+      const v2y = p2.y - p0.y;
+      const ang = Math.abs(
+        Math.atan2(v1x * v2y - v1y * v2x, v1x * v2x + v1y * v2y),
+      );
+      if (ang < minAngle) minAngle = ang;
+    }
+  }
+
+  const xy = new Float64Array(nodes.length * 2);
+  nodes.forEach((p, i) => {
+    xy[i * 2] = p.x;
+    xy[i * 2 + 1] = p.y;
+  });
+  const triIdx = new Int32Array(tris.length * 3);
+  tris.forEach((t, i) => {
+    triIdx[i * 3] = t[0];
+    triIdx[i * 3 + 1] = t[1];
+    triIdx[i * 3 + 2] = t[2];
+  });
+
+  return {
+    polygon: poly,
+    nodes: xy,
+    nodeCount: nodes.length,
+    triangles: triIdx,
+    triangleCount: tris.length,
+    isBoundary,
+    interiorIndex,
+    interiorCount,
+    h,
+    stats: {
+      h,
+      nodeCount: nodes.length,
+      interiorCount,
+      triangleCount: tris.length,
+      minAngleDeg: (minAngle * 180) / Math.PI,
+      polygonArea: polyArea,
+      meshArea,
+      areaError: Math.abs(meshArea - polyArea) / polyArea,
+    },
+  };
+}
+
+return { buildMesh };
+};
+__defs['geom/topology.js'] = function () {
+/**
+ * Edge topology and P2 degree-of-freedom numbering.
+ *
+ * `buildMesh` produces a P1 triangulation: vertices, triangles, and a flag per
+ * vertex saying whether it sits on the boundary. A C0 interior penalty method needs
+ * two things that description does not carry:
+ *
+ *   1. Quadratic elements, whose extra degrees of freedom live at edge midpoints.
+ *   2. The edges themselves, with the pair of triangles meeting at each one, because
+ *      the penalty is an integral over interior edges of the jump in the normal
+ *      derivative. No edge list, no method.
+ *
+ * This module is a pure function of the mesh. It does not touch `mesh.js`, which
+ * keeps that file's existing tests meaningful and leaves the P1 path untouched.
+ *
+ * Global numbering is `dof(vertex v) = v` and `dof(edge e) = nodeCount + e`, so a
+ * P1 field is exactly the leading `nodeCount` entries of a P2 field and the two can
+ * be compared without a translation table.
+ *
+ * Local edge `k` of a triangle joins its vertices `k` and `(k+1) % 3`, which makes
+ * `triEdges[3t + k]` line up with the standard P2 shape-function ordering
+ * `[v0, v1, v2, m01, m12, m20]` used throughout `src/fem`.
+ */
+
+/**
+ * @param {object} mesh - the return value of `buildMesh`
+ * @returns edge arrays, P2 dof numbering, and an interior index map
+ */
+function buildTopology(mesh) {
+  const { nodeCount, triangles, triangleCount, nodes, isBoundary } = mesh;
+
+  const key = new Map();
+  const lo = [];
+  const hi = [];
+  const tris = []; // 2 per edge, -1 in the second slot for a boundary edge
+  const local = []; // which local edge (0..2) this is within each of those triangles
+  const triEdges = new Int32Array(3 * triangleCount);
+
+  for (let t = 0; t < triangleCount; t++) {
+    for (let k = 0; k < 3; k++) {
+      const a = triangles[3 * t + k];
+      const b = triangles[3 * t + ((k + 1) % 3)];
+      const p = a < b ? a : b;
+      const q = a < b ? b : a;
+      const id = p * nodeCount + q;
+
+      let e = key.get(id);
+      if (e === undefined) {
+        e = lo.length;
+        key.set(id, e);
+        lo.push(p);
+        hi.push(q);
+        tris.push(t, -1);
+        local.push(k, -1);
+      } else if (tris[2 * e + 1] === -1) {
+        tris[2 * e + 1] = t;
+        local[2 * e + 1] = k;
+      } else {
+        // Three triangles on one edge is not a surface. The mesher's sliver removal
+        // and connected-component pass should make this unreachable; if it ever
+        // fires, the assembly below would silently produce nonsense instead.
+        throw new Error('mesh is not manifold: three triangles share an edge');
+      }
+      triEdges[3 * t + k] = e;
+    }
+  }
+
+  const edgeCount = lo.length;
+  const edgeNodes = new Int32Array(2 * edgeCount);
+  const edgeTris = Int32Array.from(tris);
+  const edgeLocal = Int32Array.from(local);
+  const edgeMidXY = new Float64Array(2 * edgeCount);
+
+  for (let e = 0; e < edgeCount; e++) {
+    const a = lo[e];
+    const b = hi[e];
+    edgeNodes[2 * e] = a;
+    edgeNodes[2 * e + 1] = b;
+
+    /* The straight-line midpoint, deliberately. `buildMesh` snaps boundary *vertices*
+     * onto the true outline, and it is tempting to snap these midpoints too so a
+     * circle looks like a circle. Doing so would curve the element, and a curved
+     * (isoparametric) P2 triangle no longer has a constant Hessian - which is the
+     * single property the whole assembly in src/fem/p2.js is built on. The cost of
+     * staying straight is O(h^2) geometric error at a curved rim, which the accuracy
+     * ledger reports rather than hides. */
+    edgeMidXY[2 * e] = (nodes[2 * a] + nodes[2 * b]) / 2;
+    edgeMidXY[2 * e + 1] = (nodes[2 * a + 1] + nodes[2 * b + 1]) / 2;
+  }
+
+  /* Boundary classification.
+   *
+   * For a midpoint the only correct test is topological: the dof is on the boundary
+   * exactly when its edge has one adjacent triangle. The tempting shortcut - "both
+   * endpoints are boundary vertices" - is wrong, and wrong silently. The L-shape and
+   * the star both have narrow necks where an interior edge joins two vertices that
+   * are each on the outline; treating that midpoint as constrained would shrink the
+   * finite element space and shift every eigenvalue, with nothing thrown and no
+   * residual to give it away.
+   *
+   * For a vertex the topological definition (it belongs to some boundary edge) is
+   * also the right one, and it is used here. `mesh.isBoundary` should agree with it;
+   * where the two differ, the mesher has flagged a vertex that no boundary edge
+   * touches, so the count is reported for the tests rather than quietly reconciled. */
+  const dofCount = nodeCount + edgeCount;
+  const dofIsBoundary = new Uint8Array(dofCount);
+
+  for (let e = 0; e < edgeCount; e++) {
+    if (edgeTris[2 * e + 1] !== -1) continue;
+    dofIsBoundary[nodeCount + e] = 1;
+    dofIsBoundary[edgeNodes[2 * e]] = 1;
+    dofIsBoundary[edgeNodes[2 * e + 1]] = 1;
+  }
+
+  let boundaryMismatch = 0;
+  for (let v = 0; v < nodeCount; v++) {
+    if (dofIsBoundary[v] !== (isBoundary[v] ? 1 : 0)) boundaryMismatch++;
+  }
+
+  const dofIndex = new Int32Array(dofCount);
+  let interiorDofCount = 0;
+  for (let d = 0; d < dofCount; d++) {
+    dofIndex[d] = dofIsBoundary[d] ? -1 : interiorDofCount++;
+  }
+
+  /* A pinch vertex is one where more than two boundary edges meet: two lobes of the
+   * mesh touching corner to corner. The star's spikes do it whenever the lattice
+   * cannot fit a triangle across the narrowest part of a point. It is harmless for a
+   * hinged rim, since the pinch vertex is constrained to zero and the lobes simply do
+   * not couple through it, but it does mean the outline is under-resolved there - so
+   * it is counted and reported rather than left to be discovered as a strange mode. */
+  let boundaryEdgeCount = 0;
+  const boundaryDegree = new Int32Array(nodeCount);
+  for (let e = 0; e < edgeCount; e++) {
+    if (edgeTris[2 * e + 1] !== -1) continue;
+    boundaryEdgeCount++;
+    boundaryDegree[edgeNodes[2 * e]]++;
+    boundaryDegree[edgeNodes[2 * e + 1]]++;
+  }
+  let pinchVertexCount = 0;
+  for (let v = 0; v < nodeCount; v++) if (boundaryDegree[v] > 2) pinchVertexCount++;
+
+  return {
+    edgeCount,
+    edgeNodes,
+    edgeTris,
+    edgeLocal,
+    edgeMidXY,
+    triEdges,
+    dofCount,
+    dofIsBoundary,
+    dofIndex,
+    interiorDofCount,
+    stats: {
+      edgeCount,
+      boundaryEdgeCount,
+      interiorEdgeCount: edgeCount - boundaryEdgeCount,
+      dofCount,
+      interiorDofCount,
+      boundaryMismatch,
+      pinchVertexCount,
+    },
+  };
+}
+
+return { buildTopology };
+};
+__defs['geom/refine.js'] = function () {
+/**
+ * The P1 mesh used for drawing, obtained by splitting every triangle at its edge
+ * midpoints.
+ *
+ * The renderer interpolates a nodal field linearly across each triangle. A P2 field
+ * is quadratic, so drawing it on the original triangulation would throw away exactly
+ * the extra resolution the quadratic element was chosen for - and would miss any
+ * extremum sitting inside an element rather than at a vertex.
+ *
+ * Splitting each triangle into four gives the renderer a linear field that agrees
+ * with the quadratic one at all six nodes. Because the P2 dof numbering is
+ * `dof(vertex v) = v` and `dof(edge e) = nodeCount + e`, the refined node array is
+ * the original vertices followed by the edge midpoints - which is the P2 coefficient
+ * vector itself. No permutation, no copy of the field.
+ *
+ *          v2
+ *          /\            (v0, m01, m20)
+ *      m20/__\m12        (m01, v1, m12)
+ *        /\  /\          (m20, m12, v2)
+ *       /__\/__\         (m01, m12, m20)
+ *      v0  m01  v1
+ */
+function refineMesh(mesh, topo) {
+  const { nodeCount, triangles, triangleCount } = mesh;
+  const total = nodeCount + topo.edgeCount;
+
+  const nodes = new Float64Array(2 * total);
+  nodes.set(mesh.nodes.subarray(0, 2 * nodeCount), 0);
+  nodes.set(topo.edgeMidXY.subarray(0, 2 * topo.edgeCount), 2 * nodeCount);
+
+  const tris = new Int32Array(3 * 4 * triangleCount);
+  let k = 0;
+  for (let t = 0; t < triangleCount; t++) {
+    const v0 = triangles[3 * t];
+    const v1 = triangles[3 * t + 1];
+    const v2 = triangles[3 * t + 2];
+    // Local edge k joins vertices k and (k+1)%3, matching the P2 dof ordering.
+    const m01 = nodeCount + topo.triEdges[3 * t];
+    const m12 = nodeCount + topo.triEdges[3 * t + 1];
+    const m20 = nodeCount + topo.triEdges[3 * t + 2];
+
+    tris[k++] = v0;
+    tris[k++] = m01;
+    tris[k++] = m20;
+    tris[k++] = m01;
+    tris[k++] = v1;
+    tris[k++] = m12;
+    tris[k++] = m20;
+    tris[k++] = m12;
+    tris[k++] = v2;
+    tris[k++] = m01;
+    tris[k++] = m12;
+    tris[k++] = m20;
+  }
+
+  /* A refined node is on the rim exactly when its P2 dof is constrained: an original
+   * boundary vertex, or the midpoint of a boundary edge. Carried through so the
+   * renderer and the tests can still ask "does the rim move?" of the mesh they are
+   * actually given. */
+  const isBoundary = new Uint8Array(total);
+  isBoundary.set(topo.dofIsBoundary.subarray(0, total), 0);
+
+  return {
+    polygon: mesh.polygon,
+    nodes,
+    nodeCount: total,
+    triangles: tris,
+    triangleCount: 4 * triangleCount,
+    isBoundary,
+  };
+}
+
+return { refineMesh };
+};
+__defs['math/banded.js'] = function () {
+/**
+ * Banded Cholesky with Reverse Cuthill-McKee reordering.
+ *
+ * The eigensolver needs to solve `K y = b` a few hundred times. Iterative
+ * solvers are painful here because the FEM stiffness matrix is ill-conditioned
+ * (condition number grows like 1/h^2), so conjugate gradients would need many
+ * hundreds of iterations per solve.
+ *
+ * Instead we factorise once. A 2D FEM mesh reordered by RCM has bandwidth of
+ * roughly sqrt(n), so banded Cholesky costs about n * b^2 which, at a few
+ * thousand nodes, is milliseconds. After that each solve is two banded
+ * triangular sweeps.
+ */
+
+/**
+ * Reverse Cuthill-McKee permutation. Returns `perm`, where `perm[newIndex] =
+ * oldIndex`. Handles disconnected components.
+ */
+function reverseCuthillMcKee(adj) {
+  const n = adj.length;
+  const degree = adj.map((a) => a.length);
+  const visited = new Uint8Array(n);
+  const order = [];
+
+  /** Pseudo-peripheral start node: walk to the far side via BFS twice. */
+  const pickStart = (component) => {
+    let start = component[0];
+    for (const v of component) if (degree[v] < degree[start]) start = v;
+    for (let pass = 0; pass < 2; pass++) {
+      const dist = new Int32Array(n).fill(-1);
+      dist[start] = 0;
+      const queue = [start];
+      let last = start;
+      for (let qi = 0; qi < queue.length; qi++) {
+        const v = queue[qi];
+        last = v;
+        for (const w of adj[v]) {
+          if (dist[w] === -1) {
+            dist[w] = dist[v] + 1;
+            queue.push(w);
+          }
+        }
+      }
+      start = last;
+    }
+    return start;
+  };
+
+  for (let seed = 0; seed < n; seed++) {
+    if (visited[seed]) continue;
+
+    // Collect this connected component first, so we can pick a good start.
+    const component = [];
+    {
+      const stack = [seed];
+      const seen = new Uint8Array(n);
+      seen[seed] = 1;
+      while (stack.length) {
+        const v = stack.pop();
+        component.push(v);
+        for (const w of adj[v]) {
+          if (!seen[w]) {
+            seen[w] = 1;
+            stack.push(w);
+          }
+        }
+      }
+    }
+
+    const start = pickStart(component);
+    const queue = [start];
+    visited[start] = 1;
+    for (let qi = 0; qi < queue.length; qi++) {
+      const v = queue[qi];
+      order.push(v);
+      const nbrs = adj[v].filter((w) => !visited[w]).sort((a, b) => degree[a] - degree[b]);
+      for (const w of nbrs) {
+        visited[w] = 1;
+        queue.push(w);
+      }
+    }
+  }
+
+  order.reverse();
+  return Int32Array.from(order);
+}
+
+/** Half-bandwidth of a CSR matrix under the permutation `invPerm`. */
+function bandwidthUnder(csr, invPerm) {
+  const { n, rowPtr, colIdx } = csr;
+  let b = 0;
+  for (let i = 0; i < n; i++) {
+    const pi = invPerm[i];
+    for (let k = rowPtr[i]; k < rowPtr[i + 1]; k++) {
+      const d = Math.abs(pi - invPerm[colIdx[k]]);
+      if (d > b) b = d;
+    }
+  }
+  return b;
+}
+
+/**
+ * Symmetric positive definite banded solver.
+ *
+ * Band storage holds the lower triangle as `data[i * (b + 1) + (i - j)]` for
+ * `i - b <= j <= i`, which keeps each row's band contiguous.
+ */
+class BandedCholesky {
+  /**
+   * Builds and factorises from a CSR matrix, applying RCM internally. The
+   * permutation is hidden: `solve` takes and returns vectors in the original
+   * ordering.
+   */
+  constructor(csr) {
+    const n = csr.n;
+    this.n = n;
+    const perm = reverseCuthillMcKee(csr.adjacency());
+    const invPerm = new Int32Array(n);
+    for (let newI = 0; newI < n; newI++) invPerm[perm[newI]] = newI;
+    this.perm = perm;
+    this.invPerm = invPerm;
+
+    const b = bandwidthUnder(csr, invPerm);
+    this.b = b;
+    const stride = b + 1;
+    this.stride = stride;
+    const data = new Float64Array(n * stride);
+
+    // Scatter the lower triangle of the permuted matrix into band storage.
+    const { rowPtr, colIdx, values } = csr;
+    for (let i = 0; i < n; i++) {
+      const pi = invPerm[i];
+      for (let k = rowPtr[i]; k < rowPtr[i + 1]; k++) {
+        const pj = invPerm[colIdx[k]];
+        if (pj > pi) continue;
+        data[pi * stride + (pi - pj)] = values[k];
+      }
+    }
+
+    // In-place banded Cholesky.
+    for (let i = 0; i < n; i++) {
+      const lo = Math.max(0, i - b);
+      for (let j = lo; j <= i; j++) {
+        let sum = data[i * stride + (i - j)];
+        const kLo = Math.max(lo, j - b);
+        for (let k = kLo; k < j; k++) {
+          sum -= data[i * stride + (i - k)] * data[j * stride + (j - k)];
+        }
+        if (i === j) {
+          if (sum <= 0) {
+            throw new Error(
+              'Matrix is not positive definite - the mesh is probably degenerate.',
+            );
+          }
+          data[i * stride + 0] = Math.sqrt(sum);
+        } else {
+          data[i * stride + (i - j)] = sum / data[j * stride + 0];
+        }
+      }
+    }
+
+    this.data = data;
+    this.scratch = new Float64Array(n);
+  }
+
+  /** Solves `A x = rhs`. Both vectors use the original ordering. */
+  solve(rhs, out = new Float64Array(this.n)) {
+    const { n, b, stride, data, perm, invPerm, scratch } = this;
+
+    for (let i = 0; i < n; i++) scratch[i] = rhs[perm[i]];
+
+    // Forward: L z = P rhs
+    for (let i = 0; i < n; i++) {
+      let sum = scratch[i];
+      const lo = Math.max(0, i - b);
+      for (let j = lo; j < i; j++) sum -= data[i * stride + (i - j)] * scratch[j];
+      scratch[i] = sum / data[i * stride];
+    }
+
+    // Backward: L^T x = z
+    for (let i = n - 1; i >= 0; i--) {
+      let sum = scratch[i];
+      const hi = Math.min(n - 1, i + b);
+      for (let j = i + 1; j <= hi; j++) sum -= data[j * stride + (j - i)] * scratch[j];
+      scratch[i] = sum / data[i * stride];
+    }
+
+    for (let i = 0; i < n; i++) out[i] = scratch[invPerm[i]];
+    return out;
+  }
+}
+
+return { reverseCuthillMcKee, bandwidthUnder, BandedCholesky };
+};
+__defs['math/linalg.js'] = function () {
+/**
+ * Small dense linear algebra.
+ *
+ * These operate on m x m matrices where m is the eigensolver's block size
+ * (typically 24-40), so straightforward O(m^3) algorithms are entirely fine.
+ * Matrices are flat Float64Array in row-major order: A[i * n + j].
+ */
+
+/**
+ * Eigen-decomposition of a real symmetric matrix by the cyclic Jacobi method.
+ *
+ * Jacobi is slow for large matrices but is unconditionally stable, needs no
+ * balancing or shifts, and delivers eigenvectors to full accuracy. At our block
+ * sizes that trade is free.
+ *
+ * Returns eigenvalues ascending, with `vectors[k]` the unit eigenvector for
+ * `values[k]`.
+ */
+function jacobiEigenSymmetric(Ain, n, maxSweeps = 60) {
+  const A = Float64Array.from(Ain);
+  const V = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) V[i * n + i] = 1;
+
+  for (let sweep = 0; sweep < maxSweeps; sweep++) {
+    let off = 0;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) off += A[i * n + j] * A[i * n + j];
+    }
+    if (off <= 1e-30) break;
+
+    for (let p = 0; p < n - 1; p++) {
+      for (let q = p + 1; q < n; q++) {
+        const apq = A[p * n + q];
+        if (Math.abs(apq) < 1e-300) continue;
+
+        const theta = (A[q * n + q] - A[p * n + p]) / (2 * apq);
+        const sign = theta >= 0 ? 1 : -1;
+        const t = sign / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+        const c = 1 / Math.sqrt(t * t + 1);
+        const s = t * c;
+
+        // A <- A * J  (columns p, q)
+        for (let k = 0; k < n; k++) {
+          const akp = A[k * n + p];
+          const akq = A[k * n + q];
+          A[k * n + p] = c * akp - s * akq;
+          A[k * n + q] = s * akp + c * akq;
+        }
+        // A <- J^T * A  (rows p, q)
+        for (let k = 0; k < n; k++) {
+          const apk = A[p * n + k];
+          const aqk = A[q * n + k];
+          A[p * n + k] = c * apk - s * aqk;
+          A[q * n + k] = s * apk + c * aqk;
+        }
+        // V <- V * J
+        for (let k = 0; k < n; k++) {
+          const vkp = V[k * n + p];
+          const vkq = V[k * n + q];
+          V[k * n + p] = c * vkp - s * vkq;
+          V[k * n + q] = s * vkp + c * vkq;
+        }
+      }
+    }
+  }
+
+  const idx = Array.from({ length: n }, (_, i) => i).sort(
+    (a, b) => A[a * n + a] - A[b * n + b],
+  );
+  const values = new Float64Array(n);
+  const vectors = [];
+  for (let k = 0; k < n; k++) {
+    const src = idx[k];
+    values[k] = A[src * n + src];
+    const vec = new Float64Array(n);
+    for (let i = 0; i < n; i++) vec[i] = V[i * n + src];
+    vectors.push(vec);
+  }
+  return { values, vectors };
+}
+
+/**
+ * Cholesky factorisation of a small symmetric positive definite matrix.
+ * Returns the lower triangle L with A = L * L^T, or null if not positive
+ * definite (which the eigensolver uses as a signal to regularise).
+ */
+function choleskyDense(Ain, n) {
+  const L = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= i; j++) {
+      let sum = Ain[i * n + j];
+      for (let k = 0; k < j; k++) sum -= L[i * n + k] * L[j * n + k];
+      if (i === j) {
+        if (sum <= 0) return null;
+        L[i * n + i] = Math.sqrt(sum);
+      } else {
+        L[i * n + j] = sum / L[j * n + j];
+      }
+    }
+  }
+  return L;
+}
+
+/** Inverse of a lower-triangular matrix, by forward substitution per column. */
+function invertLowerTriangular(L, n) {
+  const X = new Float64Array(n * n);
+  for (let col = 0; col < n; col++) {
+    X[col * n + col] = 1 / L[col * n + col];
+    for (let i = col + 1; i < n; i++) {
+      let sum = 0;
+      for (let k = col; k < i; k++) sum += L[i * n + k] * X[k * n + col];
+      X[i * n + col] = -sum / L[i * n + i];
+    }
+  }
+  return X;
+}
+
+/** Dot product of two equal-length vectors. */
+function dot(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
+}
+
+return { jacobiEigenSymmetric, choleskyDense, invertLowerTriangular, dot };
+};
+__defs['math/eigen.js'] = function () {
+/**
+ * Smallest eigenpairs of the generalised symmetric problem
+ *
+ *     K phi = lambda M phi        (K, M symmetric positive definite)
+ *
+ * by block inverse iteration with a Rayleigh-Ritz projection.
+ *
+ * Why this method: we want the *lowest* 20-30 modes. Plain Lanczos converges to
+ * the extremes of the spectrum, and for a stiffness matrix the top end converges
+ * first, which is the wrong end. Applying K^-1 inverts the spectrum so the modes
+ * we care about become dominant, and because we already have a Cholesky
+ * factorisation each application is cheap.
+ *
+ * Guard vectors matter: convergence for eigenvalue i is governed by the gap to
+ * eigenvalue m+1 where m is the block size, so we iterate on more vectors than
+ * we intend to keep and discard the tail.
+ */
+
+const { jacobiEigenSymmetric, dot } = __req('math/linalg.js');
+
+/** Deterministic PRNG so runs (and tests) are reproducible. */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = ((t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t) >>> 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296 - 0.5;
+  };
+}
+
+/**
+ * M-orthonormalises `cols` in place using modified Gram-Schmidt with one
+ * re-orthogonalisation pass. Degenerate columns are replaced with fresh random
+ * vectors rather than being allowed to poison the basis.
+ */
+function mOrthonormalize(cols, applyM, rand) {
+  const m = cols.length;
+  const n = cols[0].length;
+  const Mcols = [];
+
+  for (let j = 0; j < m; j++) {
+    let v = cols[j];
+    let norm = 0;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      for (let pass = 0; pass < 2; pass++) {
+        for (let i = 0; i < j; i++) {
+          const c = dot(v, Mcols[i]);
+          if (c === 0) continue;
+          const ci = cols[i];
+          for (let k = 0; k < n; k++) v[k] -= c * ci[k];
+        }
+      }
+      const Mv = applyM(v);
+      const q = dot(v, Mv);
+      norm = q > 0 ? Math.sqrt(q) : 0;
+      if (norm > 1e-11) {
+        for (let k = 0; k < n; k++) v[k] /= norm;
+        Mcols[j] = applyM(v);
+        break;
+      }
+      // Linearly dependent: try again from a fresh direction.
+      for (let k = 0; k < n; k++) v[k] = rand();
+      norm = 0;
+    }
+
+    if (!Mcols[j]) Mcols[j] = applyM(v);
+    cols[j] = v;
+  }
+  return Mcols;
+}
+
+/**
+ * @param {object} opts
+ * @param {number} opts.n            problem size
+ * @param {number} opts.want         how many of the lowest modes to return
+ * @param {(x: Float64Array) => Float64Array} opts.applyK   x -> K x
+ * @param {(x: Float64Array) => Float64Array} opts.applyM   x -> M x
+ * @param {(b: Float64Array) => Float64Array} opts.solveK   b -> K^-1 b
+ * @returns {{values: Float64Array, vectors: Float64Array[], iterations: number,
+ *            residuals: Float64Array}}
+ */
+function smallestEigenpairs({
+  n,
+  want,
+  applyK,
+  applyM,
+  solveK,
+  guard = null,
+  maxIter = 300,
+  // Chasing eigenvalues to machine precision is wasted effort: the answer is
+  // limited by the mesh to a few parts in a thousand, so converging the
+  // *algebraic* problem far past that only costs iterations.
+  tol = 1e-8,
+  seed = 0x5eed,
+  onProgress = null,
+}) {
+  const target = Math.min(want, n);
+  const extra = guard === null ? Math.max(8, Math.ceil(target * 0.6)) : guard;
+  const m = Math.min(n, target + extra);
+  const rand = mulberry32(seed);
+
+  // Start with a constant vector (huge overlap with the fundamental mode, which
+  // has no interior sign changes) plus random directions for the rest.
+  const X = [];
+  for (let j = 0; j < m; j++) {
+    const v = new Float64Array(n);
+    if (j === 0) v.fill(1);
+    else for (let k = 0; k < n; k++) v[k] = rand();
+    X.push(v);
+  }
+  mOrthonormalize(X, applyM, rand);
+
+  let prev = null;
+  let values = new Float64Array(m);
+  let iterations = 0;
+
+  for (let iter = 1; iter <= maxIter; iter++) {
+    iterations = iter;
+
+    // Y = K^-1 M X
+    const Y = X.map((x) => solveK(applyM(x)));
+    mOrthonormalize(Y, applyM, rand);
+
+    // Project: A = Y^T K Y in the M-orthonormal basis Y.
+    const KY = Y.map((y) => applyK(y));
+    const A = new Float64Array(m * m);
+    for (let i = 0; i < m; i++) {
+      for (let j = i; j < m; j++) {
+        const v = dot(Y[i], KY[j]);
+        A[i * m + j] = v;
+        A[j * m + i] = v;
+      }
+    }
+
+    const { values: theta, vectors } = jacobiEigenSymmetric(A, m);
+    values = theta;
+
+    // Rotate the basis into the Ritz directions.
+    const next = [];
+    for (let j = 0; j < m; j++) {
+      const col = new Float64Array(n);
+      const vj = vectors[j];
+      for (let k = 0; k < m; k++) {
+        const c = vj[k];
+        if (c === 0) continue;
+        const yk = Y[k];
+        for (let i = 0; i < n; i++) col[i] += c * yk[i];
+      }
+      next.push(col);
+    }
+    for (let j = 0; j < m; j++) X[j] = next[j];
+
+    if (onProgress && iter % 5 === 0) onProgress({ iteration: iter, values: theta });
+
+    if (prev) {
+      let worst = 0;
+      for (let k = 0; k < target; k++) {
+        const denom = Math.max(1e-300, Math.abs(theta[k]));
+        worst = Math.max(worst, Math.abs(theta[k] - prev[k]) / denom);
+      }
+      if (worst < tol) break;
+    }
+    prev = Float64Array.from(theta.subarray(0, target));
+  }
+
+  // Relative residuals, so callers can report honest accuracy.
+  const residuals = new Float64Array(target);
+  for (let k = 0; k < target; k++) {
+    const x = X[k];
+    const Kx = applyK(x);
+    const Mx = applyM(x);
+    let num = 0;
+    let den = 0;
+    for (let i = 0; i < n; i++) {
+      const r = Kx[i] - values[k] * Mx[i];
+      num += r * r;
+      const d = values[k] * Mx[i];
+      den += d * d;
+    }
+    residuals[k] = den > 0 ? Math.sqrt(num / den) : 0;
+  }
+
+  return {
+    values: Float64Array.from(values.subarray(0, target)),
+    vectors: X.slice(0, target),
+    iterations,
+    residuals,
+  };
+}
+
+return { smallestEigenpairs };
+};
+__defs['math/sparse.js'] = function () {
+/**
+ * Compressed sparse row matrices, plus a builder that accumulates duplicate
+ * entries (which is exactly what finite element assembly produces: every
+ * element contributes to the same node pairs as its neighbours).
+ */
+
+class SparseBuilder {
+  constructor(n) {
+    this.n = n;
+    this.rows = Array.from({ length: n }, () => new Map());
+  }
+
+  /** Accumulates `v` into entry (i, j). */
+  add(i, j, v) {
+    if (v === 0) return;
+    const row = this.rows[i];
+    row.set(j, (row.get(j) || 0) + v);
+  }
+
+  build() {
+    const n = this.n;
+    const rowPtr = new Int32Array(n + 1);
+    let nnz = 0;
+    for (let i = 0; i < n; i++) {
+      rowPtr[i] = nnz;
+      nnz += this.rows[i].size;
+    }
+    rowPtr[n] = nnz;
+
+    const colIdx = new Int32Array(nnz);
+    const values = new Float64Array(nnz);
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const cols = [...this.rows[i].keys()].sort((a, b) => a - b);
+      for (const j of cols) {
+        colIdx[k] = j;
+        values[k] = this.rows[i].get(j);
+        k++;
+      }
+    }
+    return new CSR(n, rowPtr, colIdx, values);
+  }
+}
+
+/**
+ * Several matrices assembled at once onto one shared sparsity pattern.
+ *
+ * The nematic stiffness matrix is affine in the two material parameters,
+ *
+ *     A(alpha, beta) = A_lap + alpha (A_bih + eta A_pen) + beta (A_nem + eta A_pen)
+ *
+ * so the four channels are assembled once per shape and then recombined whenever a
+ * slider moves. That recombination is a pass over the value arrays and nothing else -
+ * no meshing, no element loop, no Map - which is what keeps dragging the director
+ * responsive. It only works if every channel has identical `rowPtr` and `colIdx`,
+ * which is what this builder guarantees: one pattern, several value arrays.
+ */
+class ChannelBuilder {
+  constructor(n, channels) {
+    this.n = n;
+    this.channels = channels;
+    this.rows = Array.from({ length: n }, () => new Map());
+    this.store = [];
+  }
+
+  /** Accumulates `v` into entry (i, j) of the named channel. */
+  add(channel, i, j, v) {
+    if (v === 0) return;
+    const row = this.rows[i];
+    let slot = row.get(j);
+    if (slot === undefined) {
+      slot = this.store.length;
+      row.set(j, slot);
+      for (let c = 0; c < this.channels.length; c++) this.store.push(0);
+    }
+    this.store[slot + channel] += v;
+  }
+
+  /** @returns {Record<string, CSR>} one CSR per channel, all sharing a pattern. */
+  build() {
+    const n = this.n;
+    const nch = this.channels.length;
+    const rowPtr = new Int32Array(n + 1);
+    let nnz = 0;
+    for (let i = 0; i < n; i++) {
+      rowPtr[i] = nnz;
+      nnz += this.rows[i].size;
+    }
+    rowPtr[n] = nnz;
+
+    const colIdx = new Int32Array(nnz);
+    const values = Array.from({ length: nch }, () => new Float64Array(nnz));
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const cols = [...this.rows[i].keys()].sort((a, b) => a - b);
+      for (const j of cols) {
+        const slot = this.rows[i].get(j);
+        colIdx[k] = j;
+        for (let c = 0; c < nch; c++) values[c][k] = this.store[slot + c];
+        k++;
+      }
+    }
+
+    const out = {};
+    this.channels.forEach((name, c) => {
+      out[name] = new CSR(n, rowPtr, colIdx, values[c]);
+    });
+    return out;
+  }
+}
+
+/**
+ * `out = sum_i weight_i * mats_i`, for matrices that share a sparsity pattern.
+ * Allocates a fresh CSR unless one is supplied to write into.
+ */
+function combine(mats, weights, out = null) {
+  const first = mats[0];
+  const nnz = first.values.length;
+  const values = out ? out.values : new Float64Array(nnz);
+  for (let k = 0; k < nnz; k++) {
+    let s = 0;
+    for (let m = 0; m < mats.length; m++) s += weights[m] * mats[m].values[k];
+    values[k] = s;
+  }
+  return out || new CSR(first.n, first.rowPtr, first.colIdx, values);
+}
+
+class CSR {
+  constructor(n, rowPtr, colIdx, values) {
+    this.n = n;
+    this.rowPtr = rowPtr;
+    this.colIdx = colIdx;
+    this.values = values;
+  }
+
+  get nnz() {
+    return this.values.length;
+  }
+
+  /** out = A * x. Allocates `out` when not supplied. */
+  matvec(x, out = new Float64Array(this.n)) {
+    const { n, rowPtr, colIdx, values } = this;
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      const end = rowPtr[i + 1];
+      for (let k = rowPtr[i]; k < end; k++) sum += values[k] * x[colIdx[k]];
+      out[i] = sum;
+    }
+    return out;
+  }
+
+  /** x^T A x, used for Rayleigh quotients. */
+  quadForm(x) {
+    const tmp = this.matvec(x);
+    let s = 0;
+    for (let i = 0; i < this.n; i++) s += x[i] * tmp[i];
+    return s;
+  }
+
+  /** Adjacency lists (excluding the diagonal), for reordering algorithms. */
+  adjacency() {
+    const { n, rowPtr, colIdx } = this;
+    const adj = Array.from({ length: n }, () => []);
+    for (let i = 0; i < n; i++) {
+      for (let k = rowPtr[i]; k < rowPtr[i + 1]; k++) {
+        const j = colIdx[k];
+        if (j !== i) adj[i].push(j);
+      }
+    }
+    return adj;
+  }
+}
+
+return { SparseBuilder, ChannelBuilder, combine, CSR };
+};
+__defs['fem/p2.js'] = function () {
+/**
+ * P2 (quadratic triangle) element kernels for the nematic Helmholtz-Korteweg operator.
+ *
+ * The six shape functions on a straight triangle, in the ordering used everywhere in
+ * this codebase - `[v0, v1, v2, m01, m12, m20]` - are
+ *
+ *     N_i    = lambda_i (2 lambda_i - 1)          (vertex i)
+ *     N_(ij) = 4 lambda_i lambda_j                (midpoint of edge i-j)
+ *
+ * Both are covered by one formula. Writing `pair[a]` for the index pair and `coef[a]`
+ * for the factor,
+ *
+ *     pair = [(0,0), (1,1), (2,2), (0,1), (1,2), (2,0)]
+ *     coef = [  2,     2,     2,     4,     4,     4  ]
+ *
+ *     N_a    = (coef[a] / 2) lambda_i lambda_j - [a is a vertex] lambda_i
+ *     D^2N_a = coef[a] ( g_i (x) g_j  +  g_j (x) g_i ),      g_i = grad(lambda_i)
+ *
+ * The barycentric coordinates are affine, so `g_i` is constant on the element and
+ * therefore **so is the Hessian of every shape function**. That is the property this
+ * whole file exists to exploit: every fourth-order volume integral is exact from a
+ * single evaluation, with no quadrature loop, which makes a C0 interior penalty
+ * element matrix cost about what the P1 stiffness matrix costs upstream. It is also
+ * the property that forbids curving the elements - see the note on boundary midpoints
+ * in `src/geom/topology.js`.
+ *
+ * The operator being discretised is
+ *
+ *     alpha Delta^2 u + beta div grad ( n^T (Hess u) n ) - Delta u = lambda u
+ *
+ * The fourth-order part is represented by the *Hessian* tensor
+ *
+ *     C~H = alpha H + (beta/2) [ (Hn) (x) n + n (x) (Hn) ]
+ *     C~H : G = alpha (H:G) + beta (Hn).(Gn)
+ *
+ * rather than by the Laplacian form `alpha (tr H) I + ...` that a first reading of the
+ * paper suggests. The two agree as differential operators, and differ only by boundary
+ * terms, but the Laplacian form's quadratic energy `alpha t^2 + beta t s` (with
+ * `t = tr H`, `s = n^T H n`) vanishes on every traceless H and goes negative for
+ * `t s < -alpha t^2 / beta`. In the continuum that is harmless, because positivity
+ * comes from integrating by parts across the whole domain. C0IP integrates element by
+ * element, where it cannot, so the assembled matrix would fail its Cholesky
+ * factorisation intermittently depending on the mesh and on beta. The Hessian
+ * representative is pointwise positive definite instead:
+ *
+ *     C~H : H = alpha |H|_F^2 + beta |Hn|^2  >=  alpha |H|_F^2
+ *
+ * with a coercivity constant that does not degrade as beta grows. Its symbol on a
+ * plane wave `exp(i d.x)` is `alpha |d|^4 + beta |d|^2 (d.n)^2`, which is exactly the
+ * dispersion relation in the paper.
+ */
+
+/** `pair[a]` packed as two arrays, to keep the inner loops free of allocation. */
+const PAIR_I = Object.freeze([0, 1, 2, 0, 1, 2]);
+const PAIR_J = Object.freeze([0, 1, 2, 1, 2, 0]);
+const COEF = Object.freeze([2, 2, 2, 4, 4, 4]);
+
+/** Frobenius inner product of two symmetric 2x2 tensors stored as (xx, xy, yy). */
+function ddot(axx, axy, ayy, bxx, bxy, byy) {
+  return axx * bxx + 2 * axy * bxy + ayy * byy;
+}
+
+/**
+ * Per-triangle geometry and the constant Hessians of the six shape functions.
+ *
+ * `twoA` is kept **signed**. The Hessian and stiffness kernels are even in the
+ * gradients and would not notice, but the normal-derivative rows used by the edge
+ * terms are linear in them, so an unsigned area would flip the sign of every jump on
+ * a clockwise triangle and quietly wreck the penalty.
+ */
+class Element {
+  constructor() {
+    this.bx = new Float64Array(3); // b_i = y_j - y_k
+    this.cy = new Float64Array(3); // c_i = x_k - x_j
+    this.gx = new Float64Array(3); // grad(lambda_i).x
+    this.gy = new Float64Array(3); // grad(lambda_i).y
+    this.hxx = new Float64Array(6);
+    this.hxy = new Float64Array(6);
+    this.hyy = new Float64Array(6);
+    this.area = 0;
+    this.twoA = 0;
+  }
+
+  /** @returns false if the triangle is degenerate and should be skipped */
+  load(nodes, i0, i1, i2) {
+    const x0 = nodes[i0 * 2];
+    const y0 = nodes[i0 * 2 + 1];
+    const x1 = nodes[i1 * 2];
+    const y1 = nodes[i1 * 2 + 1];
+    const x2 = nodes[i2 * 2];
+    const y2 = nodes[i2 * 2 + 1];
+
+    const b = this.bx;
+    const c = this.cy;
+    b[0] = y1 - y2;
+    b[1] = y2 - y0;
+    b[2] = y0 - y1;
+    c[0] = x2 - x1;
+    c[1] = x0 - x2;
+    c[2] = x1 - x0;
+
+    const twoA = x0 * b[0] + x1 * b[1] + x2 * b[2];
+    if (!(Math.abs(twoA) > 0)) return false;
+    this.twoA = twoA;
+    this.area = Math.abs(twoA) / 2;
+
+    const inv = 1 / twoA;
+    for (let i = 0; i < 3; i++) {
+      this.gx[i] = b[i] * inv;
+      this.gy[i] = c[i] * inv;
+    }
+
+    // D^2 N_a = coef[a] ( g_i (x) g_j + g_j (x) g_i ), symmetric, constant.
+    for (let a = 0; a < 6; a++) {
+      const i = PAIR_I[a];
+      const j = PAIR_J[a];
+      const k = COEF[a];
+      this.hxx[a] = 2 * k * this.gx[i] * this.gx[j];
+      this.hxy[a] = k * (this.gx[i] * this.gy[j] + this.gx[j] * this.gy[i]);
+      this.hyy[a] = 2 * k * this.gy[i] * this.gy[j];
+    }
+    return true;
+  }
+
+  /** grad(N_a) evaluated at local vertex `k`. P2 gradients are affine, so the two
+   *  endpoint values determine the gradient along an edge exactly. */
+  gradAtVertex(a, k, out) {
+    const i = PAIR_I[a];
+    const j = PAIR_J[a];
+    if (a < 3) {
+      // vertex function: grad(N_i) = (4 lambda_i - 1) g_i
+      const s = (k === i ? 4 : 0) - 1;
+      out[0] = s * this.gx[i];
+      out[1] = s * this.gy[i];
+    } else {
+      // midpoint function: grad(N_ij) = 4 ( lambda_j g_i + lambda_i g_j )
+      const si = k === j ? 4 : 0;
+      const sj = k === i ? 4 : 0;
+      out[0] = si * this.gx[i] + sj * this.gx[j];
+      out[1] = si * this.gy[i] + sj * this.gy[j];
+    }
+    return out;
+  }
+}
+
+/**
+ * `integral( grad N_a . grad N_b )`, the P2 stiffness matrix, into `out` (6x6 row major).
+ *
+ * The integrand is a product of two affine functions, so the three-point midpoint rule
+ * `integral f = (A/3) sum f(edge midpoints)` integrates it exactly. Using quadrature
+ * here rather than a transcribed closed form removes a whole class of typo, at a cost
+ * of a few dozen flops per element.
+ */
+function stiffness6(el, out) {
+  out.fill(0);
+  const w = el.area / 3;
+  const ga = new Float64Array(2);
+  const gb = new Float64Array(2);
+  // Midpoint of edge (i,j) is the point where lambda_i = lambda_j = 1/2, lambda_k = 0.
+  const MID = [
+    [0.5, 0.5, 0],
+    [0, 0.5, 0.5],
+    [0.5, 0, 0.5],
+  ];
+  for (const lam of MID) {
+    for (let a = 0; a < 6; a++) {
+      gradAtBary(el, a, lam, ga);
+      for (let b = a; b < 6; b++) {
+        gradAtBary(el, b, lam, gb);
+        const v = w * (ga[0] * gb[0] + ga[1] * gb[1]);
+        out[a * 6 + b] += v;
+        if (a !== b) out[b * 6 + a] += v;
+      }
+    }
+  }
+  return out;
+}
+
+function gradAtBary(el, a, lam, out) {
+  const i = PAIR_I[a];
+  const j = PAIR_J[a];
+  if (a < 3) {
+    const s = 4 * lam[i] - 1;
+    out[0] = s * el.gx[i];
+    out[1] = s * el.gy[i];
+  } else {
+    out[0] = 4 * (lam[j] * el.gx[i] + lam[i] * el.gx[j]);
+    out[1] = 4 * (lam[j] * el.gy[i] + lam[i] * el.gy[j]);
+  }
+  return out;
+}
+
+/* The consistent P2 mass matrix, `integral(N_a N_b) = (A/180) * MASS`.
+ *
+ * Note the sign pattern: a vertex couples to the midpoint *opposite* it with -4 and to
+ * its own two adjacent midpoints with exactly 0, and each vertex row sums to zero
+ * because `integral N_i = 0` for a quadratic vertex function. The whole table sums to
+ * 180, i.e. to the area, as any mass matrix must. */
+const MASS = Object.freeze([
+  6, -1, -1, 0, -4, 0,
+  -1, 6, -1, 0, 0, -4,
+  -1, -1, 6, -4, 0, 0,
+  0, 0, -4, 32, 16, 16,
+  -4, 0, 0, 16, 32, 16,
+  0, -4, 0, 16, 16, 32,
+]);
+
+function mass6(el, out) {
+  const s = el.area / 180;
+  for (let k = 0; k < 36; k++) out[k] = s * MASS[k];
+  return out;
+}
+
+/**
+ * The two fourth-order volume matrices, which are constant over the element:
+ *
+ *     bih[a][b] = integral( D^2N_a : D^2N_b )          multiplies alpha
+ *     nem[a][b] = integral( (D^2N_a n) . (D^2N_b n) )  multiplies beta
+ *
+ * `nem` is a Gram matrix of the six vectors `D^2N_a n`, so it is positive
+ * semi-definite by construction with rank at most 2 - which is the element-level
+ * statement of `beta |Hn|^2 >= 0`.
+ */
+function fourthOrder6(el, nx, ny, bih, nem) {
+  const hnx = new Float64Array(6);
+  const hny = new Float64Array(6);
+  for (let a = 0; a < 6; a++) {
+    hnx[a] = el.hxx[a] * nx + el.hxy[a] * ny;
+    hny[a] = el.hxy[a] * nx + el.hyy[a] * ny;
+  }
+  const A = el.area;
+  for (let a = 0; a < 6; a++) {
+    for (let b = a; b < 6; b++) {
+      const kb = A * ddot(el.hxx[a], el.hxy[a], el.hyy[a], el.hxx[b], el.hxy[b], el.hyy[b]);
+      const kn = A * (hnx[a] * hnx[b] + hny[a] * hny[b]);
+      bih[a * 6 + b] = kb;
+      bih[b * 6 + a] = kb;
+      nem[a * 6 + b] = kn;
+      nem[b * 6 + a] = kn;
+    }
+  }
+}
+
+/**
+ * The normal-normal moment `M(u) = nu^T (C~ D^2u) nu`, split into the parts that
+ * multiply alpha and beta, for each of the six shape functions. Constant along the
+ * edge, because the Hessian is constant on the element.
+ *
+ *     mAlpha[a] = nu^T H_a nu
+ *     mBeta[a]  = (n.nu) * ( nu . (H_a n) )
+ */
+function moment6(el, nx, ny, vx, vy, mAlpha, mBeta) {
+  const ndotv = nx * vx + ny * vy;
+  for (let a = 0; a < 6; a++) {
+    const hxx = el.hxx[a];
+    const hxy = el.hxy[a];
+    const hyy = el.hyy[a];
+    mAlpha[a] = hxx * vx * vx + 2 * hxy * vx * vy + hyy * vy * vy;
+    const hnx = hxx * nx + hxy * ny;
+    const hny = hxy * nx + hyy * ny;
+    mBeta[a] = ndotv * (vx * hnx + vy * hny);
+  }
+}
+
+/**
+ * `dN_a/dnu` at local vertex `k`, for all six shape functions. Affine along the edge,
+ * so the two endpoint values give the exact linear profile the penalty integral needs.
+ */
+function normalDeriv6(el, k, vx, vy, out) {
+  const g = new Float64Array(2);
+  for (let a = 0; a < 6; a++) {
+    el.gradAtVertex(a, k, g);
+    out[a] = g[0] * vx + g[1] * vy;
+  }
+  return out;
+}
+
+/**
+ * Outward unit normal of triangle `t` on its local edge `k`, plus the edge length.
+ *
+ * Local edge `k` runs from vertex `k` to vertex `(k+1)%3`. Rotating that edge vector
+ * gives a normal whose sign depends on the triangle's winding, so it is fixed by
+ * testing against the opposite vertex - which is cheap and does not care whether the
+ * mesher produced consistent winding.
+ */
+function edgeNormal(nodes, tri, t, k, out) {
+  const a = tri[3 * t + k];
+  const b = tri[3 * t + ((k + 1) % 3)];
+  const c = tri[3 * t + ((k + 2) % 3)];
+  const ax = nodes[2 * a];
+  const ay = nodes[2 * a + 1];
+  const ex = nodes[2 * b] - ax;
+  const ey = nodes[2 * b + 1] - ay;
+  const len = Math.hypot(ex, ey);
+  if (!(len > 0)) return 0;
+  let vx = ey / len;
+  let vy = -ex / len;
+  // Point it away from the third vertex.
+  if ((nodes[2 * c] - ax) * vx + (nodes[2 * c + 1] - ay) * vy > 0) {
+    vx = -vx;
+    vy = -vy;
+  }
+  out[0] = vx;
+  out[1] = vy;
+  return len;
+}
+
+return { PAIR_I, PAIR_J, COEF, ddot, Element, stiffness6, mass6, fourthOrder6, moment6, normalDeriv6, edgeNormal };
+};
+__defs['fem/assemble.js'] = function () {
+/**
+ * C0 interior penalty assembly for the nematic Helmholtz-Korteweg eigenproblem
+ *
+ *     alpha Delta^2 u + beta div grad ( n^T (Hess u) n ) - Delta u = lambda u   in Omega
+ *
+ * with a hinged ("sound soft") rim: `u = 0` imposed strongly, and the second boundary
+ * condition `alpha Delta u + beta n^T (Hess u) n = 0` left natural.
+ *
+ * Setting alpha = beta = 0 recovers the plain Dirichlet Laplacian eigenproblem, i.e.
+ * exactly the problem upstream solves, but on quadratic elements.
+ *
+ * ## Why interior penalty
+ *
+ * The operator is fourth order, so its natural energy space is H^2, and an H^2
+ * conforming element (Argyris, HCT) needs C^1 continuity across every edge - which
+ * costs derivative degrees of freedom, macro-elements, or both. C0IP takes ordinary
+ * Lagrange elements, lets the normal derivative jump between triangles, and puts the
+ * jump back under control with a penalty.
+ *
+ * Applying that idea to *this* equation is not this file's invention: it is the subject
+ * of T. van Beeck, "A C^0-hybrid interior penalty method for the nematic
+ * Helmholtz-Korteweg equation" (in preparation), which the Farrell-van Beeck-Zerbinati
+ * paper names as the way around needing C^1 elements. That method is the hybridised
+ * variant, with unknowns on the facets; what is implemented below is the plain C^0
+ * interior penalty - the cruder relative, chosen because it fits in a browser. The
+ * general technique for fourth-order problems is Engel, Garikipati, Hughes, Larson,
+ * Mazzei and Taylor, CMAME 191 (2002). What makes it cheap here specifically is
+ * that P2 has a *constant* Hessian per triangle (see src/fem/p2.js), so:
+ *
+ *   - every volume integral is exact from a single evaluation, and
+ *   - the normal-normal moment is constant along each edge, so the consistency
+ *     integral is exact from the edge midpoint alone - one point, not two.
+ *
+ * ## The form
+ *
+ *     a_h(u,v) = sum_T  integral_T [ alpha D^2u : D^2v + beta (D^2u . n).(D^2v . n) ]
+ *              + sum_T  integral_T grad u . grad v
+ *              - sum_e  integral_e { M(u) } [dv/dnu] + { M(v) } [du/dnu]
+ *              + sum_e  p_e integral_e [du/dnu][dv/dnu]
+ *
+ *     M(u) = nu^T (C~ D^2u) nu = alpha d^2u/dnu^2 + beta (n.nu) d^2u/(dnu dn)
+ *
+ * where `e` runs over **interior edges only**. That is the whole of the hinged
+ * boundary condition: `u = 0` is a row omission, and the natural condition is what is
+ * left when the boundary edge contributes nothing.
+ *
+ * Only the normal derivative is penalised. Because the space is C^0, `[v] = 0` and the
+ * tangential derivative jump `[dv/dtau] = 0` already, so the shear term telescopes
+ * away and the tangential-normal part of the traction contributes nothing. That is
+ * precisely what makes C0IP cheaper than a full discontinuous Galerkin method.
+ *
+ * ## Penalty
+ *
+ *     p_e = eta (alpha + beta) |e| ( 1/|T+| + 1/|T-| ),   eta = 8
+ *
+ * Two details that are easy to get wrong. The coefficient is `(alpha + beta)`, not
+ * `alpha`, because the moment is bounded by `(alpha + beta)|D^2u|` and the bound
+ * enters squared. And the geometric weight is `|e|/|T|` rather than a global `1/h`,
+ * which makes the penalty sliver-proof: a thin triangle gets its own larger penalty
+ * instead of breaking one global constant. The mesher does produce slivers, which is
+ * why it reports a minimum angle at all.
+ *
+ * Coercivity needs `eta >= 3(1 + beta/alpha)`; with the physically sensible
+ * `beta <= alpha` that is `eta >= 6`, so the default carries about a third in hand.
+ * Over-penalising is not free either - as eta grows the method locks onto the
+ * C^1 subspace of P2, which on a general triangulation is barely larger than the
+ * globally quadratic functions.
+ *
+ * ## Channels
+ *
+ * The four stiffness contributions are assembled separately onto one shared sparsity
+ * pattern, so that
+ *
+ *     A(alpha, beta) = lap + alpha (bih + eta pen) + beta (nem + eta pen)
+ *
+ * can be recombined without re-assembling when a slider moves. The director angle is
+ * *not* affine in this sense - it enters `nem` and the beta half of the moment
+ * nonlinearly - so changing it does require a fresh assembly.
+ */
+
+const { ChannelBuilder, combine } = __req('math/sparse.js');
+const { Element, edgeNormal, fourthOrder6, mass6, moment6, normalDeriv6, stiffness6, } = __req('fem/p2.js');
+
+const DEFAULT_ETA = 8;
+
+function identityMap(n) {
+  const m = new Int32Array(n);
+  for (let i = 0; i < n; i++) m[i] = i;
+  return m;
+}
+
+/** Local dof `a` of triangle `t`: vertices first, then the midpoints of local edges. */
+function localDofs(mesh, topo, t, out) {
+  out[0] = mesh.triangles[3 * t];
+  out[1] = mesh.triangles[3 * t + 1];
+  out[2] = mesh.triangles[3 * t + 2];
+  out[3] = mesh.nodeCount + topo.triEdges[3 * t];
+  out[4] = mesh.nodeCount + topo.triEdges[3 * t + 1];
+  out[5] = mesh.nodeCount + topo.triEdges[3 * t + 2];
+  return out;
+}
+
+/**
+ * @param {object} mesh   from `buildMesh`
+ * @param {object} topo   from `buildTopology`
+ * @param {object} [opts]
+ * @param {number} [opts.theta] director angle in radians; n = (cos theta, sin theta)
+ * @param {number} [opts.eta]   interior penalty constant
+ * @param {boolean} [opts.unconstrained] keep every dof, imposing no boundary condition.
+ *   Only the tests want this: it is what lets the patch test evaluate the form on a
+ *   function that does not vanish on the rim.
+ * @returns {{lap: CSR, bih: CSR, nem: CSR, pen: CSR, M: CSR, n: number}}
+ */
+function assembleNematic(
+  mesh,
+  topo,
+  { theta = 0, eta = DEFAULT_ETA, unconstrained = false } = {},
+) {
+  const { nodes, triangles, triangleCount } = mesh;
+  const dofIndex = unconstrained ? identityMap(topo.dofCount) : topo.dofIndex;
+  const n = unconstrained ? topo.dofCount : topo.interiorDofCount;
+
+  const nx = Math.cos(theta);
+  const ny = Math.sin(theta);
+
+  const builder = new ChannelBuilder(n, ['lap', 'bih', 'nem', 'pen', 'M']);
+
+  const el = new Element();
+  const dofs = new Int32Array(6);
+  const rows = new Int32Array(6);
+  const K = new Float64Array(36);
+  const Mloc = new Float64Array(36);
+  const bih = new Float64Array(36);
+  const nem = new Float64Array(36);
+
+  // ------------------------------------------------------------------ elements
+
+  const area = new Float64Array(triangleCount);
+
+  for (let t = 0; t < triangleCount; t++) {
+    if (!el.load(nodes, triangles[3 * t], triangles[3 * t + 1], triangles[3 * t + 2])) continue;
+    area[t] = el.area;
+
+    localDofs(mesh, topo, t, dofs);
+    for (let a = 0; a < 6; a++) rows[a] = dofIndex[dofs[a]];
+
+    stiffness6(el, K);
+    mass6(el, Mloc);
+    fourthOrder6(el, nx, ny, bih, nem);
+
+    for (let a = 0; a < 6; a++) {
+      const ra = rows[a];
+      if (ra < 0) continue; // constrained: u = 0 on the rim
+      for (let b = 0; b < 6; b++) {
+        const cb = rows[b];
+        if (cb < 0) continue;
+        const k = a * 6 + b;
+        builder.add(0, ra, cb, K[k]);
+        builder.add(1, ra, cb, bih[k]);
+        builder.add(2, ra, cb, nem[k]);
+        builder.add(4, ra, cb, Mloc[k]);
+      }
+    }
+  }
+
+  // --------------------------------------------------------------------- edges
+
+  /* Interior edges only. A boundary edge would carry the *clamped* condition
+   * `du/dnu = 0`; leaving it out is exactly what makes the rim hinged. */
+  const elP = new Element();
+  const elM = new Element();
+  const nu = new Float64Array(2);
+
+  // 12 local dofs: the six of T+ followed by the six of T-. Three of them are shared
+  // and appear twice with the same global index, which the builder accumulates
+  // correctly - so no de-duplication logic is needed here.
+  const gdof = new Int32Array(12);
+  const grow = new Int32Array(12);
+  const jumpA = new Float64Array(12); // d/dnu at the first endpoint
+  const jumpB = new Float64Array(12); // ...and at the second
+  const momA = new Float64Array(12); // alpha part of { M }
+  const momB = new Float64Array(12); // beta part of { M }
+  const tmp6 = new Float64Array(6);
+  const mA6 = new Float64Array(6);
+  const mB6 = new Float64Array(6);
+
+  for (let e = 0; e < topo.edgeCount; e++) {
+    const tPlus = topo.edgeTris[2 * e];
+    const tMinus = topo.edgeTris[2 * e + 1];
+    if (tMinus === -1) continue;
+
+    const kPlus = topo.edgeLocal[2 * e];
+    const kMinus = topo.edgeLocal[2 * e + 1];
+
+    if (!elP.load(nodes, triangles[3 * tPlus], triangles[3 * tPlus + 1], triangles[3 * tPlus + 2]))
+      continue;
+    if (
+      !elM.load(nodes, triangles[3 * tMinus], triangles[3 * tMinus + 1], triangles[3 * tMinus + 2])
+    )
+      continue;
+
+    const len = edgeNormal(nodes, triangles, tPlus, kPlus, nu);
+    if (!(len > 0)) continue;
+
+    localDofs(mesh, topo, tPlus, dofs);
+    for (let a = 0; a < 6; a++) gdof[a] = dofs[a];
+    localDofs(mesh, topo, tMinus, dofs);
+    for (let a = 0; a < 6; a++) gdof[6 + a] = dofs[a];
+    for (let a = 0; a < 12; a++) grow[a] = dofIndex[gdof[a]];
+
+    /* Jumps in the outward-from-each-element convention:
+     *
+     *     [du/dnu] = grad u|_{T+} . nu_{T+}  +  grad u|_{T-} . nu_{T-}
+     *
+     * With `nu` the outward normal of T+, the outward normal of T- on the same edge is
+     * exactly `-nu`, so the second contribution enters with a minus sign. Writing it
+     * this way makes the whole expression invariant under swapping the two triangles,
+     * which removes every orientation bug this term is prone to.
+     *
+     * The two endpoints of the edge are local vertices `k` and `(k+1)%3` of each
+     * triangle - but the two triangles may traverse the edge in opposite directions,
+     * so the endpoints are matched by global vertex id rather than by local order. */
+    const v0 = topo.edgeNodes[2 * e];
+    const pPlusFirst = triangles[3 * tPlus + kPlus] === v0;
+    const mMinusFirst = triangles[3 * tMinus + kMinus] === v0;
+
+    const kPlusA = pPlusFirst ? kPlus : (kPlus + 1) % 3;
+    const kPlusB = pPlusFirst ? (kPlus + 1) % 3 : kPlus;
+    const kMinusA = mMinusFirst ? kMinus : (kMinus + 1) % 3;
+    const kMinusB = mMinusFirst ? (kMinus + 1) % 3 : kMinus;
+
+    jumpA.fill(0);
+    jumpB.fill(0);
+    normalDeriv6(elP, kPlusA, nu[0], nu[1], tmp6);
+    for (let a = 0; a < 6; a++) jumpA[a] += tmp6[a];
+    normalDeriv6(elP, kPlusB, nu[0], nu[1], tmp6);
+    for (let a = 0; a < 6; a++) jumpB[a] += tmp6[a];
+    normalDeriv6(elM, kMinusA, -nu[0], -nu[1], tmp6);
+    for (let a = 0; a < 6; a++) jumpA[6 + a] += tmp6[a];
+    normalDeriv6(elM, kMinusB, -nu[0], -nu[1], tmp6);
+    for (let a = 0; a < 6; a++) jumpB[6 + a] += tmp6[a];
+
+    /* The average moment. `M` is quadratic in nu, so it does not care which side's
+     * normal is used, and it is constant on each element - hence constant along the
+     * edge, hence the consistency integral needs no quadrature at all. */
+    momA.fill(0);
+    momB.fill(0);
+    moment6(elP, nx, ny, nu[0], nu[1], mA6, mB6);
+    for (let a = 0; a < 6; a++) {
+      momA[a] = 0.5 * mA6[a];
+      momB[a] = 0.5 * mB6[a];
+    }
+    moment6(elM, nx, ny, nu[0], nu[1], mA6, mB6);
+    for (let a = 0; a < 6; a++) {
+      momA[6 + a] = 0.5 * mA6[a];
+      momB[6 + a] = 0.5 * mB6[a];
+    }
+
+    // integral_e of an affine function is its midpoint value times the length.
+    const wCons = len;
+    // integral_e of a product of two affine functions, by the 1-D mass matrix.
+    const wPenAA = len / 3;
+    const wPenAB = len / 6;
+
+    const areaPlus = area[tPlus];
+    const areaMinus = area[tMinus];
+    if (!(areaPlus > 0) || !(areaMinus > 0)) continue;
+    const pGeom = len * (1 / areaPlus + 1 / areaMinus);
+
+    for (let a = 0; a < 12; a++) {
+      const ra = grow[a];
+      if (ra < 0) continue;
+      const jbarA = 0.5 * (jumpA[a] + jumpB[a]);
+      for (let b = 0; b < 12; b++) {
+        const cb = grow[b];
+        if (cb < 0) continue;
+        const jbarB = 0.5 * (jumpA[b] + jumpB[b]);
+
+        // -( {M(u)}[dv/dnu] + {M(v)}[du/dnu] ), split by which parameter it multiplies
+        builder.add(1, ra, cb, -wCons * (momA[a] * jbarB + momA[b] * jbarA));
+        builder.add(2, ra, cb, -wCons * (momB[a] * jbarB + momB[b] * jbarA));
+
+        // + p_e [du/dnu][dv/dnu], with the eta(alpha+beta) factor applied at combine time
+        const pen =
+          wPenAA * (jumpA[a] * jumpA[b] + jumpB[a] * jumpB[b]) +
+          wPenAB * (jumpA[a] * jumpB[b] + jumpB[a] * jumpA[b]);
+        builder.add(3, ra, cb, pGeom * pen);
+      }
+    }
+  }
+
+  const built = builder.build();
+  return { ...built, n, eta };
+}
+
+/**
+ * `A(alpha, beta) = lap + alpha (bih + eta pen) + beta (nem + eta pen)`.
+ *
+ * A pass over the value arrays, with no re-assembly, because all five channels share
+ * one sparsity pattern.
+ */
+function stiffnessAt(channels, alpha, beta, eta = channels.eta ?? DEFAULT_ETA) {
+  const penalty = eta * (alpha + beta);
+  return combine(
+    [channels.lap, channels.bih, channels.nem, channels.pen],
+    [1, alpha, beta, penalty],
+  );
+}
+
+return { DEFAULT_ETA, assembleNematic, stiffnessAt };
+};
+__defs['fem/solve.js'] = function () {
+/**
+ * The whole pipeline: polygon -> mesh -> topology -> FEM -> eigenpairs -> mode fields.
+ *
+ * Everything downstream (the sound, the spectrum, the animated modes) is derived from
+ * what this returns. Nothing else in the app is allowed to invent a frequency.
+ */
+
+const { buildMesh } = __req('geom/mesh.js');
+const { buildTopology } = __req('geom/topology.js');
+const { refineMesh } = __req('geom/refine.js');
+const { BandedCholesky } = __req('math/banded.js');
+const { smallestEigenpairs } = __req('math/eigen.js');
+const { DEFAULT_ETA, assembleNematic, stiffnessAt } = __req('fem/assemble.js');
+
+/** How many dof spacings must fit inside the thinnest boundary layer to trust it. */
+const LAYER_CELLS_REQUIRED = 2;
+
+/**
+ * The acoustic boundary layer of the nematic Helmholtz-Korteweg operator.
+ *
+ * Substituting the evanescent root `d = i kappa nu` into the dispersion relation
+ * `alpha d^4 + beta d^2 (d.n)^2 + d^2 = k^2` gives, for `k^2 << 1/alpha`,
+ *
+ *     delta(nu) = 1 / kappa = sqrt( alpha + beta (n.nu)^2 )
+ *
+ * so the layer is anisotropic: thinnest where the rim normal is perpendicular to the
+ * director, thickest where it is parallel. (That same combination `alpha + beta(n.nu)^2`
+ * is what sets the penalty coefficient, which is a pleasant consistency check on the
+ * formulation rather than a coincidence.)
+ *
+ * Resolving it matters because an unresolved layer is wrong in a way no residual can
+ * reveal: the eigen residual is measured against the *discrete* operator, which is
+ * perfectly happy.
+ */
+function boundaryLayer(alpha, beta, hDof) {
+  const min = Math.sqrt(Math.max(0, alpha));
+  const max = Math.sqrt(Math.max(0, alpha + beta));
+  return { min, max, cells: hDof > 0 ? min / hDof : Infinity };
+}
+
+/** The smallest alpha whose layer is still resolved by a given dof spacing. */
+function minResolvedAlpha(hDof) {
+  return (LAYER_CELLS_REQUIRED * hDof) ** 2;
+}
+
+/**
+ * @param {{x:number,y:number}[]} polygon
+ * @param {object} [opts]
+ * @param {number} [opts.modes]       how many modes to compute
+ * @param {number} [opts.targetNodes] vertex budget (accuracy vs speed)
+ * @param {number} [opts.alpha]       Korteweg susceptibility
+ * @param {number} [opts.beta]        nematic susceptibility
+ * @param {number} [opts.theta]       director angle in radians
+ * @param {(p: object) => void} [opts.onProgress]
+ */
+function solveDrum(
+  polygon,
+  {
+    modes = 12,
+    targetNodes = 1200,
+    align = 0,
+    alpha = 0,
+    beta = 0,
+    theta = 0,
+    eta = DEFAULT_ETA,
+    onProgress = null,
+  } = {},
+) {
+  const t0 = Date.now();
+  const report = (stage, detail) => onProgress && onProgress({ stage, ...detail });
+
+  report('meshing');
+  const mesh = buildMesh(polygon, { targetNodes, align });
+  const topo = buildTopology(mesh);
+
+  report('assembling', { nodes: topo.interiorDofCount });
+  const channels = assembleNematic(mesh, topo, { theta, eta });
+  const n = channels.n;
+  const M = channels.M;
+
+  /* The penalty is provably sufficient for `eta >= 3(1 + beta/alpha)`, and the default
+   * carries a margin on top of that. But the mesher can produce a triangle bad enough
+   * to eat the margin, and the failure mode is a Cholesky factorisation that reports
+   * the matrix is not positive definite. Rather than surface that to a user who moved
+   * a slider, double the penalty and try again: over-penalising costs accuracy, and
+   * only in the constant, whereas failing costs the whole drum. */
+  let usedEta = eta;
+  let penaltyRetries = 0;
+  let K = null;
+  let chol = null;
+  for (;;) {
+    K = stiffnessAt(channels, alpha, beta, usedEta);
+    report('factorising', { unknowns: n });
+    try {
+      chol = new BandedCholesky(K);
+      break;
+    } catch (err) {
+      if (penaltyRetries >= 3) throw err;
+      penaltyRetries++;
+      usedEta *= 2;
+    }
+  }
+
+  report('solving', { unknowns: n, bandwidth: chol.b });
+  const want = Math.min(modes, Math.max(1, n - 1));
+  const result = smallestEigenpairs({
+    n,
+    want,
+    applyK: (x) => K.matvec(x, new Float64Array(n)),
+    applyM: (x) => M.matvec(x, new Float64Array(n)),
+    solveK: (rhs) => chol.solve(rhs, new Float64Array(n)),
+    onProgress: (p) => report('solving', p),
+  });
+
+  /* Scatter each interior eigenvector back onto the full P2 dof set (constrained dofs
+   * are identically zero) and normalise to a peak amplitude of 1, so the renderer and
+   * the synthesiser get a predictable range.
+   *
+   * The peak is taken over all dofs including edge midpoints, not just vertices: a
+   * quadratic mode can attain its extremum on an edge, and normalising by a vertex-only
+   * maximum would push the colour map past its ends. */
+  const { dofIndex, dofCount } = topo;
+  const fields = result.vectors.map((vec) => {
+    const full = new Float64Array(dofCount);
+    let peak = 0;
+    for (let i = 0; i < dofCount; i++) {
+      const u = dofIndex[i];
+      if (u >= 0) {
+        const v = vec[u];
+        full[i] = v;
+        const a = Math.abs(v);
+        if (a > peak) peak = a;
+      }
+    }
+    if (peak > 0) {
+      // Fix the sign convention so the largest excursion is positive; otherwise the
+      // colour map would flip arbitrarily between runs.
+      let signAt = 0;
+      for (let i = 0; i < dofCount; i++) {
+        if (Math.abs(full[i]) === peak) {
+          signAt = full[i];
+          break;
+        }
+      }
+      const s = (signAt < 0 ? -1 : 1) / peak;
+      for (let i = 0; i < dofCount; i++) full[i] *= s;
+    }
+    return full;
+  });
+
+  // P2 nodes sit at vertices and edge midpoints, so the spacing between them is about
+  // half the triangle size.
+  const hDof = mesh.h / 2;
+  const layer = boundaryLayer(alpha, beta, hDof);
+
+  return {
+    mesh: refineMesh(mesh, topo),
+    coarseMesh: mesh,
+    topology: topo,
+    eigenvalues: result.values,
+    modes: fields,
+    diagnostics: {
+      ...mesh.stats,
+      ...topo.stats,
+      alpha,
+      beta,
+      theta,
+      unknowns: n,
+      bandwidth: chol.b,
+      nnz: K.nnz,
+      iterations: result.iterations,
+      maxResidual: result.residuals.length ? Math.max(...result.residuals) : 0,
+      hDof,
+      layerMin: layer.min,
+      layerMax: layer.max,
+      layerCells: layer.cells,
+      layerResolved: alpha === 0 || layer.cells >= LAYER_CELLS_REQUIRED,
+      eta: usedEta,
+      penaltyRetries,
+      solveMs: Date.now() - t0,
+    },
+  };
+}
+
+return { boundaryLayer, minResolvedAlpha, solveDrum };
+};
+return __req;
+})();
+var solveDrum = __load('fem/solve.js').solveDrum;
+self.onmessage = function (event) {
+  var d = event.data;
+  try {
+    var result = solveDrum(d.polygon, {
+      modes: d.modes, targetNodes: d.targetNodes, align: d.align,
+      alpha: d.alpha, beta: d.beta, theta: d.theta,
+      onProgress: function (p) { self.postMessage({ id: d.id, type: 'progress', stage: p.stage }); },
+    });
+    self.postMessage({
+      id: d.id, type: 'done',
+      eigenvalues: result.eigenvalues, modes: result.modes,
+      mesh: {
+        polygon: result.mesh.polygon, nodes: result.mesh.nodes,
+        nodeCount: result.mesh.nodeCount, triangles: result.mesh.triangles,
+        triangleCount: result.mesh.triangleCount, isBoundary: result.mesh.isBoundary,
+      },
+    });
+  } catch (error) {
+    self.postMessage({ id: d.id, type: 'error', message: (error && error.message) || String(error) });
+  }
+};
+</script>
+
+<script>
+const load = (function () {
+/* Bundled from nematicDrum/src by code/esbundle.py -- do not edit here. */
+var __defs = {}, __cache = {};
+function __req(id) {
+  if (!(id in __cache)) __cache[id] = __defs[id]();
+  return __cache[id];
+}
+__defs['geom/polygon.js'] = function () {
+/**
+ * Simple-polygon helpers. A polygon is an array of `{ x, y }` vertices,
+ * implicitly closed (no repeated last point).
+ */
+
+function signedArea(poly) {
+  let s = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    s += (poly[j].x - poly[i].x) * (poly[j].y + poly[i].y);
+  }
+  return s / 2;
+}
+
+const area = (poly) => Math.abs(signedArea(poly));
+
+/** Returns the polygon wound counter-clockwise (positive signed area). */
+function ensureCCW(poly) {
+  return signedArea(poly) < 0 ? poly.slice().reverse() : poly.slice();
+}
+
+function perimeter(poly) {
+  let p = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    p += Math.hypot(poly[i].x - poly[j].x, poly[i].y - poly[j].y);
+  }
+  return p;
+}
+
+function bbox(poly) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of poly) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+function centroid(poly) {
+  let cx = 0;
+  let cy = 0;
+  let a = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const cross = poly[j].x * poly[i].y - poly[i].x * poly[j].y;
+    a += cross;
+    cx += (poly[j].x + poly[i].x) * cross;
+    cy += (poly[j].y + poly[i].y) * cross;
+  }
+  if (Math.abs(a) < 1e-300) return { x: poly[0].x, y: poly[0].y };
+  return { x: cx / (3 * a), y: cy / (3 * a) };
+}
+
+/** Crossing-number point-in-polygon test. Boundary cases are not guaranteed. */
+function pointInPolygon(x, y, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x;
+    const yi = poly[i].y;
+    const xj = poly[j].x;
+    const yj = poly[j].y;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** Closest point to (x, y) on segment ab, plus the squared distance to it. */
+function closestOnSegment(x, y, ax, ay, bx, by) {
+  const vx = bx - ax;
+  const vy = by - ay;
+  const len2 = vx * vx + vy * vy;
+  let t = len2 === 0 ? 0 : ((x - ax) * vx + (y - ay) * vy) / len2;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const px = ax + t * vx;
+  const py = ay + t * vy;
+  const dx = x - px;
+  const dy = y - py;
+  return { x: px, y: py, d2: dx * dx + dy * dy };
+}
+
+/** Nearest point on the polygon's boundary. */
+function projectToBoundary(x, y, poly) {
+  let best = null;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const c = closestOnSegment(x, y, poly[j].x, poly[j].y, poly[i].x, poly[i].y);
+    if (!best || c.d2 < best.d2) best = c;
+  }
+  return best;
+}
+
+function distanceToBoundary(x, y, poly) {
+  return Math.sqrt(projectToBoundary(x, y, poly).d2);
+}
+
+/** Resamples the closed boundary at roughly `spacing` apart. */
+function resampleClosed(poly, spacing) {
+  const out = [];
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % n];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const steps = Math.max(1, Math.round(len / spacing));
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  return out;
+}
+
+/**
+ * Ramer-Douglas-Peucker simplification, for turning a noisy freehand stroke
+ * into a polygon with a manageable vertex count.
+ */
+function simplify(points, epsilon) {
+  if (points.length < 3) return points.slice();
+
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1;
+  keep[points.length - 1] = 1;
+
+  const stack = [[0, points.length - 1]];
+  while (stack.length) {
+    const [first, last] = stack.pop();
+    if (last <= first + 1) continue;
+    const a = points[first];
+    const b = points[last];
+    let worst = -1;
+    let worstIdx = -1;
+    for (let i = first + 1; i < last; i++) {
+      const c = closestOnSegment(points[i].x, points[i].y, a.x, a.y, b.x, b.y);
+      if (c.d2 > worst) {
+        worst = c.d2;
+        worstIdx = i;
+      }
+    }
+    if (Math.sqrt(worst) > epsilon) {
+      keep[worstIdx] = 1;
+      stack.push([first, worstIdx], [worstIdx, last]);
+    }
+  }
+
+  const out = [];
+  for (let i = 0; i < points.length; i++) if (keep[i]) out.push(points[i]);
+  return out;
+}
+
+/**
+ * Normalises a polygon into a canonical frame: centred on the origin and scaled
+ * so the enclosed area is 1. This makes spectra comparable between shapes,
+ * because Laplacian eigenvalues scale like 1/area - without it, "hear the
+ * shape" would mostly be hearing the size.
+ */
+function normalizeToUnitArea(poly) {
+  const c = centroid(poly);
+  const a = area(poly);
+  if (a <= 0) return poly.slice();
+  const s = 1 / Math.sqrt(a);
+  return poly.map((p) => ({ x: (p.x - c.x) * s, y: (p.y - c.y) * s }));
+}
+
+/** Removes consecutive duplicate/near-duplicate vertices. */
+function dedupe(poly, eps = 1e-9) {
+  const out = [];
+  for (const p of poly) {
+    const last = out[out.length - 1];
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > eps) out.push(p);
+  }
+  while (
+    out.length > 1 &&
+    Math.hypot(out[0].x - out[out.length - 1].x, out[0].y - out[out.length - 1].y) <= eps
+  ) {
+    out.pop();
+  }
+  return out;
+}
+
+/** True when segments ab and cd cross at a point interior to both. */
+function properCross(a, b, c, d) {
+  const o = (p, q, r) => (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+  const d1 = o(a, b, c);
+  const d2 = o(a, b, d);
+  const d3 = o(c, d, a);
+  const d4 = o(c, d, b);
+  const eps = 1e-12;
+  if (Math.abs(d1) < eps || Math.abs(d2) < eps || Math.abs(d3) < eps || Math.abs(d4) < eps) {
+    return false;
+  }
+  return d1 * d2 < 0 && d3 * d4 < 0;
+}
+
+/**
+ * True when no two non-adjacent edges cross. The mesher assumes a simple
+ * polygon, so freehand strokes have to be checked before they are accepted.
+ */
+function isSimple(poly) {
+  const n = poly.length;
+  if (n < 3) return false;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % n];
+    for (let j = i + 1; j < n; j++) {
+      if (i === 0 && j === n - 1) continue; // adjacent through the wrap
+      if (j === i + 1) continue; // adjacent
+      const c = poly[j];
+      const d = poly[(j + 1) % n];
+      if (properCross(a, b, c, d)) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Douglas-Peucker for a *closed* curve.
+ *
+ * Running the open-polyline version on a loop is subtly wrong: it always keeps
+ * the first and last points, which privileges wherever the stroke happened to
+ * start and preserves any wobble there as a permanent corner. Splitting the loop
+ * into two chains at two well-separated points removes that bias - the retained
+ * split points are genuine extremes of the shape rather than an artefact of when
+ * the pointer went down.
+ */
+function simplifyClosed(points, epsilon) {
+  const n = points.length;
+  if (n < 4) return points.slice();
+
+  let cx = 0;
+  let cy = 0;
+  for (const p of points) {
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= n;
+  cy /= n;
+
+  // Farthest point from the centroid, then farthest point from that.
+  let iA = 0;
+  let bestA = -1;
+  for (let i = 0; i < n; i++) {
+    const d = (points[i].x - cx) ** 2 + (points[i].y - cy) ** 2;
+    if (d > bestA) {
+      bestA = d;
+      iA = i;
+    }
+  }
+  let iB = iA;
+  let bestB = -1;
+  for (let i = 0; i < n; i++) {
+    const d = (points[i].x - points[iA].x) ** 2 + (points[i].y - points[iA].y) ** 2;
+    if (d > bestB) {
+      bestB = d;
+      iB = i;
+    }
+  }
+  if (iA === iB) return simplify(points, epsilon);
+
+  const chain = (from, to) => {
+    const out = [];
+    let i = from;
+    for (;;) {
+      out.push(points[i]);
+      if (i === to) break;
+      i = (i + 1) % n;
+    }
+    return out;
+  };
+
+  const first = simplify(chain(iA, iB), epsilon);
+  const second = simplify(chain(iB, iA), epsilon);
+  // Both chains include their shared endpoints, so drop the duplicates.
+  return first.concat(second.slice(1, -1));
+}
+
+/**
+ * The single gate every candidate outline passes through before the mesher sees
+ * it: simplify, bound the vertex count, then check it is actually a drum.
+ *
+ * Two very different producers feed this - a freehand pointer trace and a sampled
+ * formula curve - and they used to be one validator and one plan for a second.
+ * They share it instead, because the checks are properties of the *outline* and
+ * not of how it was made: too few vertices, not enough area to be a membrane, and
+ * self-crossing, which is the fatal one since a crossing outline has no
+ * well-defined interior and there is nothing to solve on.
+ *
+ * Returns `{ ok: true, polygon }` (counter-clockwise) or `{ ok: false, reason }`
+ * with `reason` one of 'short' | 'degenerate' | 'area' | 'crossing'. The reason is
+ * a code rather than a sentence so each caller can word it for its own surface: a
+ * stroke that crosses itself and a formula that crosses itself need different
+ * advice.
+ */
+function cleanClosedOutline(
+  points,
+  { tolerance = 0.006, minArea = 0.004, maxVertices = 220, minPoints = 8 } = {},
+) {
+  if (!points || points.length < minPoints) return { ok: false, reason: 'short' };
+
+  let poly = dedupe(points, 1e-6);
+  poly = dedupe(simplifyClosed(poly, tolerance), tolerance * 0.5);
+  if (poly.length < 3) return { ok: false, reason: 'degenerate' };
+
+  // Coarsen progressively rather than refuse. A 720-sample analytic curve and a
+  // dense pointer trace both arrive well over the budget, and throwing away
+  // detail the mesh could not resolve anyway costs nothing.
+  let tol = tolerance;
+  while (poly.length > maxVertices && tol < 0.2) {
+    tol *= 1.6;
+    poly = dedupe(simplifyClosed(poly, tol), tol * 0.5);
+  }
+
+  if (area(poly) < minArea) return { ok: false, reason: 'area' };
+  if (!isSimple(poly)) return { ok: false, reason: 'crossing' };
+  return { ok: true, polygon: ensureCCW(poly) };
+}
+
+return { signedArea, area, ensureCCW, perimeter, bbox, centroid, pointInPolygon, projectToBoundary, distanceToBoundary, resampleClosed, simplify, normalizeToUnitArea, dedupe, isSimple, simplifyClosed, cleanClosedOutline };
+};
+__defs['app/canvas.js'] = function () {
+/**
+ * Drawing the drum: its outline, its mesh, and the interpolated displacement
+ * field of a vibration mode.
+ *
+ * The field is rasterised properly - barycentric interpolation across every
+ * triangle - rather than flat-shaded per element, because the whole point is to
+ * see smooth standing waves and the curves where they vanish. Those curves are
+ * the nodal lines, the modern descendants of Chladni's sand figures, and the
+ * colour ramp is built to make them read as dark bands without needing a
+ * separate contouring pass.
+ */
+
+const { pointInPolygon } = __req('geom/polygon.js');
+
+const RAMP_SIZE = 512;
+
+/**
+ * These mirror four custom properties in styles/app.css and must be kept in step
+ * with them by hand. There is no build step to share them, and the canvas needs
+ * numeric channels rather than CSS strings because the ramp is interpolated.
+ *
+ *   PLATE -> --plate            INK -> --ink
+ *   POS   -> --vermilion-bright NEG -> --ultramarine
+ *
+ * NEG is the host site's own link blue, #4478A6. POS is its mirror across the hue
+ * circle at matched lightness and saturation, so neither pole dominates the other and
+ * the pair still separates once the magnitude darkening below is applied - which is
+ * what keeps the figure readable in greyscale and to a red-green colour-blind reader.
+ */
+const PLATE = [255, 255, 255];
+const INK = [0, 0, 0];
+const POS = [167, 112, 68];
+const NEG = [68, 120, 166];
+
+const mix = (a, b, t) => [
+  a[0] + (b[0] - a[0]) * t,
+  a[1] + (b[1] - a[1]) * t,
+  a[2] + (b[2] - a[2]) * t,
+];
+
+/**
+ * Displacement posterised into contour bands rather than a smooth gradient.
+ *
+ * Two reasons, and the second is the better one. The world is flat colour, so a
+ * gradient would be foreign to it. And banding is simply better information
+ * design: discrete steps put the amplitude levels and the zero crossing exactly
+ * where the eye can read them, instead of smearing them into a wash.
+ *
+ * The zero band is left as bare paper, which is also how the real thing looks:
+ * Chladni's figures are sand collecting along the lines that do not move, so the
+ * nodal lines read light against the vibrating field. Magnitude then darkens
+ * monotonically outward, so the pattern survives being seen in greyscale or by
+ * someone who cannot separate red from blue.
+ */
+function buildRamp() {
+  const ramp = new Uint8ClampedArray(RAMP_SIZE * 4);
+  // Deliberately narrow first band: the zero crossing should read as a drawn
+  // line, not a zone.
+  const EDGES = [0.05, 0.28, 0.55, 0.8];
+  for (let i = 0; i < RAMP_SIZE; i++) {
+    const v = (i / (RAMP_SIZE - 1)) * 2 - 1; // -1 .. 1
+    const a = Math.abs(v);
+    const base = v >= 0 ? POS : NEG;
+    let c;
+    if (a < EDGES[0]) c = PLATE;
+    else if (a < EDGES[1]) c = mix(PLATE, base, 0.42);
+    else if (a < EDGES[2]) c = mix(PLATE, base, 0.71);
+    else if (a < EDGES[3]) c = base;
+    else c = mix(base, INK, 0.24);
+    ramp[i * 4] = c[0];
+    ramp[i * 4 + 1] = c[1];
+    ramp[i * 4 + 2] = c[2];
+    ramp[i * 4 + 3] = 255;
+  }
+  return ramp;
+}
+
+const RAMP = buildRamp();
+
+const clampUnit = (v) => (v > 1 ? 1 : v < -1 ? -1 : v);
+
+class Board {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.drum = null;
+    this.transform = { scale: 1, ox: 0, oy: 0 };
+    this.showMesh = false;
+
+    // Field rasterisation happens at a capped resolution and is then scaled up.
+    // Interpolating a smooth function does not need a pixel-for-pixel buffer, and
+    // the saving is what keeps the ring-out animation comfortably at 60fps.
+    this.fieldCanvas = document.createElement('canvas');
+    this.fieldCtx = this.fieldCanvas.getContext('2d');
+    this.fieldMax = 460;
+
+    // How far a fully-displaced point is pushed on screen, as a fraction of the
+    // canvas. Offsetting screen-y by the displacement is an oblique projection of
+    // the real 3D surface (x, y, u) -> (x, y - k*u), so it is a faithful view
+    // rather than a decoration. The rim is clamped at u = 0, so the outline stays
+    // exactly where it is and you watch the membrane move inside a fixed edge.
+    this.displaceFactor = 0.075;
+
+    // The nematic director, drawn as a rod field over the plate. `active` is false
+    // when beta = 0, where the director is still defined but the operator does not
+    // depend on it - showing it then would claim an influence that is not there.
+    this.director = { theta: 0, active: false };
+  }
+
+  setDirector(theta, active) {
+    this.director = { theta, active };
+  }
+
+  /**
+   * The director field, as a lattice of short rods.
+   *
+   * Rods rather than arrows, because a nematic director is headless: n and -n are the
+   * same state, and an arrowhead would assert an orientation the physics does not
+   * have. This is the same convention as the rod plots in the papers.
+   */
+  drawDirector(color = 'rgba(0,0,0,0.30)') {
+    const { ctx, drum, director } = this;
+    if (!drum || !director.active) return;
+
+    const px = Math.min(this.canvas.width, this.canvas.height);
+    const step = px / 18;
+    const half = step * 0.32;
+    const dx = Math.cos(director.theta);
+    const dy = Math.sin(director.theta);
+
+    ctx.save();
+    ctx.beginPath();
+    this.tracePolygon(drum.mesh.polygon);
+    ctx.clip();
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, this.dpr);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let x = step / 2; x < this.canvas.width; x += step) {
+      for (let y = step / 2; y < this.canvas.height; y += step) {
+        // Screen y grows downward, so the rod is mirrored to keep the angle the one
+        // the reader sets on the dial.
+        ctx.moveTo(x - half * dx, y + half * dy);
+        ctx.lineTo(x + half * dx, y - half * dy);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  displacePixels(enabled) {
+    if (!enabled) return 0;
+    return this.displaceFactor * Math.min(this.canvas.width, this.canvas.height);
+  }
+
+  resize() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const rect = this.canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (this.canvas.width !== w || this.canvas.height !== h) {
+      this.canvas.width = w;
+      this.canvas.height = h;
+    }
+    this.cssWidth = rect.width;
+    this.cssHeight = rect.height;
+    this.dpr = dpr;
+    this.recomputeTransform();
+  }
+
+  setDrum(drum) {
+    this.drum = drum;
+    this.recomputeTransform();
+  }
+
+  recomputeTransform() {
+    if (!this.drum) return;
+    const poly = this.drum.mesh.polygon;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const p of poly) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const pad = 0.09 * Math.min(w, h);
+    const sx = (w - 2 * pad) / Math.max(1e-9, maxX - minX);
+    const sy = (h - 2 * pad) / Math.max(1e-9, maxY - minY);
+    const scale = Math.min(sx, sy);
+    this.transform = {
+      scale,
+      // Flip y so positive y is up, the way the maths is written.
+      ox: w / 2 - ((minX + maxX) / 2) * scale,
+      oy: h / 2 + ((minY + maxY) / 2) * scale,
+      minX,
+      minY,
+      maxX,
+      maxY,
+    };
+  }
+
+  /** Shape coordinates -> device pixels. */
+  toPixel(x, y) {
+    const { scale, ox, oy } = this.transform;
+    return { x: x * scale + ox, y: oy - y * scale };
+  }
+
+  /** CSS pixels (from a pointer event) -> shape coordinates. */
+  fromClient(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    const px = (clientX - rect.left) * this.dpr;
+    const py = (clientY - rect.top) * this.dpr;
+    const { scale, ox, oy } = this.transform;
+    return { x: (px - ox) / scale, y: (oy - py) / scale };
+  }
+
+  containsShapePoint(x, y) {
+    return this.drum ? pointInPolygon(x, y, this.drum.mesh.polygon) : false;
+  }
+
+  clear() {
+    const { ctx, canvas } = this;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
+   * Rasterises `values` (one per mesh node) into the offscreen buffer using
+   * barycentric interpolation, then blits it scaled to the visible canvas.
+   */
+  /**
+   * The colour field is drawn flat, deliberately. Displacing the raster as well
+   * as the mesh made triangles overlap in projection with no depth order, which
+   * showed up as spurious line crossings and hard blue/amber seams on shapes with
+   * spikes or re-entrant corners. Colour already encodes displacement; geometry
+   * on top of it bought artefacts and no information.
+   */
+  drawField(values, amplitude = 1) {
+    const { drum } = this;
+    if (!drum) return;
+    const { nodes, triangles, triangleCount } = drum.mesh;
+    const t = this.transform;
+
+    // Offscreen buffer covering the same region, at reduced resolution.
+    const full = Math.max(this.canvas.width, this.canvas.height);
+    const q = Math.min(1, this.fieldMax / Math.max(1, full));
+    const fw = Math.max(1, Math.round(this.canvas.width * q));
+    const fh = Math.max(1, Math.round(this.canvas.height * q));
+    if (this.fieldCanvas.width !== fw || this.fieldCanvas.height !== fh) {
+      this.fieldCanvas.width = fw;
+      this.fieldCanvas.height = fh;
+    }
+    const img = this.fieldCtx.createImageData(fw, fh);
+    const data = img.data;
+
+    const scale = t.scale * q;
+    const ox = t.ox * q;
+    const oy = t.oy * q;
+
+    const inv = amplitude > 1e-12 ? 1 / amplitude : 0;
+
+    for (let tri = 0; tri < triangleCount; tri++) {
+      const ia = triangles[tri * 3];
+      const ib = triangles[tri * 3 + 1];
+      const ic = triangles[tri * 3 + 2];
+
+      const va = values[ia];
+      const vb = values[ib];
+      const vc = values[ic];
+
+      const ax = nodes[ia * 2] * scale + ox;
+      const ay = oy - nodes[ia * 2 + 1] * scale;
+      const bx = nodes[ib * 2] * scale + ox;
+      const by = oy - nodes[ib * 2 + 1] * scale;
+      const cx = nodes[ic * 2] * scale + ox;
+      const cy = oy - nodes[ic * 2 + 1] * scale;
+
+      const denom = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+      if (Math.abs(denom) < 1e-12) continue;
+      const invDen = 1 / denom;
+
+      let x0 = Math.max(0, Math.floor(Math.min(ax, bx, cx)));
+      let x1 = Math.min(fw - 1, Math.ceil(Math.max(ax, bx, cx)));
+      let y0 = Math.max(0, Math.floor(Math.min(ay, by, cy)));
+      let y1 = Math.min(fh - 1, Math.ceil(Math.max(ay, by, cy)));
+
+      for (let py = y0; py <= y1; py++) {
+        const fy = py + 0.5;
+        for (let px = x0; px <= x1; px++) {
+          const fx = px + 0.5;
+          const l0 = ((by - cy) * (fx - cx) + (cx - bx) * (fy - cy)) * invDen;
+          if (l0 < -0.002) continue;
+          const l1 = ((cy - ay) * (fx - cx) + (ax - cx) * (fy - cy)) * invDen;
+          if (l1 < -0.002) continue;
+          const l2 = 1 - l0 - l1;
+          if (l2 < -0.002) continue;
+
+          let v = (l0 * va + l1 * vb + l2 * vc) * inv;
+          if (v > 1) v = 1;
+          else if (v < -1) v = -1;
+
+          const idx = (((v + 1) * 0.5 * (RAMP_SIZE - 1)) | 0) * 4;
+          const o = (py * fw + px) * 4;
+          data[o] = RAMP[idx];
+          data[o + 1] = RAMP[idx + 1];
+          data[o + 2] = RAMP[idx + 2];
+          data[o + 3] = 255;
+        }
+      }
+    }
+
+    this.fieldCtx.putImageData(img, 0, 0);
+    const ctx = this.ctx;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(this.fieldCanvas, 0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  tracePolygon(poly) {
+    const ctx = this.ctx;
+    poly.forEach((p, i) => {
+      const q = this.toPixel(p.x, p.y);
+      if (i === 0) ctx.moveTo(q.x, q.y);
+      else ctx.lineTo(q.x, q.y);
+    });
+    ctx.closePath();
+  }
+
+  drawOutline(color = '#000000', width = 2) {
+    const { ctx, drum } = this;
+    if (!drum) return;
+    ctx.beginPath();
+    this.tracePolygon(drum.mesh.polygon);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width * this.dpr;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+
+  /**
+   * The finite element mesh. When `values` are supplied the nodes ride the
+   * displacement field, so you watch the actual elements flex - and because
+   * boundary nodes are clamped to zero, the rim stays still on its own.
+   */
+  drawMesh(color = 'rgba(0,0,0,0.24)', values = null, amplitude = 1, displace = false) {
+    const { ctx, drum } = this;
+    if (!drum) return;
+    const { nodes, triangles, triangleCount } = drum.mesh;
+    const dScale = values ? this.displacePixels(displace) : 0;
+    const inv = amplitude > 1e-12 ? 1 / amplitude : 0;
+
+    const py = (i) => {
+      const base = this.transform.oy - nodes[i * 2 + 1] * this.transform.scale;
+      return dScale ? base - clampUnit(values[i] * inv) * dScale : base;
+    };
+    const px = (i) => nodes[i * 2] * this.transform.scale + this.transform.ox;
+
+    ctx.beginPath();
+    for (let tri = 0; tri < triangleCount; tri++) {
+      for (let e = 0; e < 3; e++) {
+        const i = triangles[tri * 3 + e];
+        const j = triangles[tri * 3 + ((e + 1) % 3)];
+        ctx.moveTo(px(i), py(i));
+        ctx.lineTo(px(j), py(j));
+      }
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(0.5, 0.6 * this.dpr);
+    ctx.stroke();
+  }
+
+  /** Expanding ring at the strike point. */
+  drawStrikeMarker(x, y, age) {
+    const { ctx } = this;
+    const p = this.toPixel(x, y);
+    const r = (5 + age * 95) * this.dpr;
+    const alpha = Math.max(0, 1 - age * 2.4);
+    if (alpha <= 0) return;
+    // arc() throws IndexSizeError on a negative radius, and a throw here used to
+    // take the whole render loop with it. The caller clamps the age, so this is
+    // the backstop rather than the fix.
+    if (!(r > 0)) return;
+    // A hard-edged ring, no glow: this world has no soft light in it.
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(0,0,0,${alpha * 0.8})`;
+    ctx.lineWidth = 2 * this.dpr;
+    ctx.stroke();
+  }
+
+  /**
+   * Drawing happens in its own coordinate space, independent of whichever drum
+   * is currently loaded: the shorter canvas dimension spans -1 to 1. The stroke
+   * gets rescaled to unit area afterwards anyway, so only internal consistency
+   * matters.
+   */
+  drawSpaceScale() {
+    return (Math.min(this.canvas.width, this.canvas.height) / 2) * 0.92;
+  }
+
+  drawSpaceToPixel(x, y) {
+    const s = this.drawSpaceScale();
+    return { x: this.canvas.width / 2 + x * s, y: this.canvas.height / 2 - y * s };
+  }
+
+  fromClientDraw(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    const px = (clientX - rect.left) * this.dpr;
+    const py = (clientY - rect.top) * this.dpr;
+    const s = this.drawSpaceScale();
+    return { x: (px - this.canvas.width / 2) / s, y: (this.canvas.height / 2 - py) / s };
+  }
+
+  /**
+   * A dashed boundary marking the region `fromClientDraw` actually maps to
+   * -1..1 in. Drawing mode used to leave whatever drum was on screen fully
+   * rendered underneath the plate, so people had no idea the whole plate was
+   * now a blank sheet waiting for a stroke. This says so.
+   */
+  drawDrawGuide() {
+    const ctx = this.ctx;
+    const half = this.drawSpaceScale();
+    const cx = this.canvas.width / 2;
+    const cy = this.canvas.height / 2;
+    ctx.save();
+    ctx.setLineDash([6 * this.dpr, 6 * this.dpr]);
+    ctx.lineWidth = 1.5 * this.dpr;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.38)';
+    ctx.strokeRect(cx - half, cy - half, half * 2, half * 2);
+    ctx.restore();
+  }
+
+  /** In-progress freehand stroke, in draw space. */
+  drawStroke(points, closed) {
+    if (points.length < 2) return;
+    const ctx = this.ctx;
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const q = this.drawSpaceToPixel(p.x, p.y);
+      if (i === 0) ctx.moveTo(q.x, q.y);
+      else ctx.lineTo(q.x, q.y);
+    });
+    if (closed) ctx.closePath();
+    ctx.strokeStyle = '#a77044';
+    ctx.lineWidth = 2.5 * this.dpr;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+}
+
+return { PLATE, INK, Board };
+};
+__defs['app/presets.js'] = function () {
+/**
+ * Built-in shapes.
+ *
+ * Coordinates are stored in whatever frame is natural for each shape. The app
+ * normalises every drum to unit area before solving, because Laplacian
+ * eigenvalues scale like 1/area - without normalising, comparing two shapes
+ * would mostly be comparing their sizes, and "hear the shape" would be a lie.
+ *
+ * `latticePitch` declares that a shape's vertices sit on a grid of that spacing.
+ * The mesher uses it to choose a cell size that divides the pitch exactly, so
+ * those shapes are meshed with zero geometric error.
+ */
+
+const { area, centroid } = __req('geom/polygon.js');
+
+const P = (x, y) => ({ x, y });
+
+function circle(n, r = 1) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (2 * Math.PI * i) / n;
+    pts.push(P(r * Math.cos(a), r * Math.sin(a)));
+  }
+  return pts;
+}
+
+function regular(n, r = 1, rot = -Math.PI / 2) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = rot + (2 * Math.PI * i) / n;
+    pts.push(P(r * Math.cos(a), r * Math.sin(a)));
+  }
+  return pts;
+}
+
+/** Bunimovich stadium: a rectangle capped with two semicircles. */
+function stadium(straight = 1.6, radius = 0.6, seg = 48) {
+  const pts = [];
+  const hx = straight / 2;
+  for (let i = 0; i <= seg; i++) {
+    const a = -Math.PI / 2 + (Math.PI * i) / seg;
+    pts.push(P(hx + radius * Math.cos(a), radius * Math.sin(a)));
+  }
+  for (let i = 0; i <= seg; i++) {
+    const a = Math.PI / 2 + (Math.PI * i) / seg;
+    pts.push(P(-hx + radius * Math.cos(a), radius * Math.sin(a)));
+  }
+  return pts;
+}
+
+function star(points = 5, outer = 1, inner = 0.42) {
+  const pts = [];
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = -Math.PI / 2 + (Math.PI * i) / points;
+    pts.push(P(r * Math.cos(a), r * Math.sin(a)));
+  }
+  return pts;
+}
+
+const PRESETS = [
+  {
+    id: 'circle',
+    name: 'Circle',
+    blurb:
+      'The only shape whose sound we can write down exactly, at least while alpha is zero. Watch the doubled modes split as beta rises - but note that turning the director does nothing here, and cannot: a disc is rotationally symmetric, so rotating the director maps the problem onto an isospectral copy of itself.',
+    polygon: circle(256),
+    exact: 'disk',
+  },
+  {
+    id: 'square',
+    name: 'Square',
+    blurb:
+      'Overtones follow sqrt(m^2 + n^2), and modes 2 and 3 land on exactly the same frequency by symmetry. Four-fold symmetry means the director repeats every 90 degrees rather than every 180.',
+    polygon: [P(0, 0), P(1, 0), P(1, 1), P(0, 1)],
+    latticePitch: 1,
+    exact: 'square',
+  },
+  {
+    id: 'rectangle',
+    name: 'Rectangle',
+    blurb:
+      'No rotational symmetry at all, so the director angle matters at every angle - which makes this the shape to turn the dial on, and why it is where the page opens. Two to one was measured rather than picked: across the presets it gives the largest change in the overtone ratios, which is what the ear reads as a change of character.',
+    polygon: [P(0, 0), P(2, 0), P(2, 1), P(0, 1)],
+    exact: null,
+  },
+  {
+    id: 'triangle',
+    name: 'Equilateral triangle',
+    blurb: 'Three-fold symmetry, and one of the few polygons with a known closed-form spectrum.',
+    polygon: regular(3),
+  },
+  {
+    id: 'righttriangle',
+    name: 'Right triangle',
+    blurb:
+      'Half a square, and its modes are exactly the square modes that vanish along the diagonal.',
+    polygon: [P(0, 0), P(1, 0), P(0, 1)],
+    latticePitch: 1,
+    exact: 'righttriangle',
+  },
+  {
+    id: 'lshape',
+    name: 'L-shape',
+    blurb:
+      'The re-entrant corner is a genuine singularity: the true eigenfunctions have unbounded gradient there. This is the standard torture test for numerical methods.',
+    polygon: [P(0, 0), P(2, 0), P(2, 1), P(1, 1), P(1, 2), P(0, 2)],
+    latticePitch: 1,
+  },
+  {
+    id: 'stadium',
+    name: 'Stadium',
+    blurb:
+      'The Bunimovich stadium: classically chaotic. Its high modes look scarred and irregular rather than neatly striped, and the frequencies repel each other instead of clustering. This is quantum chaos you can see.',
+    polygon: stadium(),
+  },
+  {
+    id: 'star',
+    name: 'Star',
+    blurb: 'Five sharp spikes. Energy gets trapped in the points, giving oddly localised modes.',
+    polygon: star(5),
+  },
+  {
+    id: 'pentagon',
+    name: 'Pentagon',
+    blurb: 'Five-fold symmetry produces paired modes that rotate into one another.',
+    polygon: regular(5),
+  },
+];
+
+const PRESETS_BY_ID = new Map(PRESETS.map((p) => [p.id, p]));
+
+/**
+ * Centres a polygon on the origin and scales it to unit area. Returns the scaled
+ * lattice pitch too, so a preset's exactness survives normalisation.
+ */
+function normalizeShape(polygon, latticePitch = 0) {
+  const a = area(polygon);
+  if (!(a > 0)) return { polygon: polygon.slice(), align: 0 };
+  const c = centroid(polygon);
+  const s = 1 / Math.sqrt(a);
+  return {
+    polygon: polygon.map((p) => P((p.x - c.x) * s, (p.y - c.y) * s)),
+    align: latticePitch > 0 ? latticePitch * s : 0,
+  };
+}
+
+return { PRESETS, PRESETS_BY_ID, normalizeShape };
+};
+__defs['math/bessel.js'] = function () {
+/**
+ * Bessel functions of the first kind and their zeros.
+ *
+ * These exist for one reason: the circular drum has a closed-form spectrum. The
+ * eigenvalues of the unit disk are exactly the squared zeros of J_m, so the
+ * disk is the sharpest available test of whether the finite element solver is
+ * telling the truth about curved boundaries.
+ *
+ * J0/J1 use the classic minimax rational approximations (accurate to roughly
+ * 1e-8, far tighter than our discretisation error); higher orders use the
+ * standard stable recurrence, upward when x > n and downward with
+ * renormalisation otherwise.
+ */
+
+function besselJ0(x) {
+  const ax = Math.abs(x);
+  if (ax < 8) {
+    const y = x * x;
+    const p1 =
+      57568490574.0 +
+      y *
+        (-13362590354.0 +
+          y * (651619640.7 + y * (-11214424.18 + y * (77392.33017 + y * -184.9052456))));
+    const p2 =
+      57568490411.0 +
+      y * (1029532985.0 + y * (9494680.718 + y * (59272.64853 + y * (267.8532712 + y))));
+    return p1 / p2;
+  }
+  const z = 8 / ax;
+  const y = z * z;
+  const xx = ax - 0.785398164;
+  const p1 =
+    1 + y * (-0.1098628627e-2 + y * (0.2734510407e-4 + y * (-0.2073370639e-5 + y * 0.2093887211e-6)));
+  const p2 =
+    -0.1562499995e-1 +
+    y * (0.1430488765e-3 + y * (-0.6911147651e-5 + y * (0.7621095161e-6 + y * -0.934935152e-7)));
+  return Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * p1 - z * Math.sin(xx) * p2);
+}
+
+function besselJ1(x) {
+  const ax = Math.abs(x);
+  let ans;
+  if (ax < 8) {
+    const y = x * x;
+    const p1 =
+      x *
+      (72362614232.0 +
+        y * (-7895059235.0 + y * (242396853.1 + y * (-2972611.439 + y * (15704.4826 + y * -30.16036606)))));
+    const p2 =
+      144725228442.0 + y * (2300535178.0 + y * (18583304.74 + y * (99447.43394 + y * (376.9991397 + y))));
+    return p1 / p2;
+  }
+  const z = 8 / ax;
+  const y = z * z;
+  const xx = ax - 2.356194491;
+  const p1 =
+    1 + y * (0.183105e-2 + y * (-0.3516396496e-4 + y * (0.2457520174e-5 + y * -0.240337019e-6)));
+  const p2 =
+    0.04687499995 +
+    y * (-0.2002690873e-3 + y * (0.8449199096e-5 + y * (-0.88228987e-6 + y * 0.105787412e-6)));
+  ans = Math.sqrt(0.636619772 / ax) * (Math.cos(xx) * p1 - z * Math.sin(xx) * p2);
+  return x < 0 ? -ans : ans;
+}
+
+/** J_n(x) for integer n >= 0. */
+function besselJ(n, x) {
+  if (n < 0) throw new RangeError('besselJ expects n >= 0');
+  if (n === 0) return besselJ0(x);
+  if (n === 1) return besselJ1(x);
+  if (x < 0) return (n % 2 === 0 ? 1 : -1) * besselJ(n, -x);
+  if (x === 0) return 0;
+
+  const ax = Math.abs(x);
+  const tox = 2 / ax;
+
+  if (ax > n) {
+    // Upward recurrence is stable in this regime.
+    let bjm = besselJ0(ax);
+    let bj = besselJ1(ax);
+    for (let j = 1; j < n; j++) {
+      const bjp = j * tox * bj - bjm;
+      bjm = bj;
+      bj = bjp;
+    }
+    return bj;
+  }
+
+  // Miller's downward recurrence with renormalisation.
+  const ACC = 160;
+  const BIGNO = 1e10;
+  const BIGNI = 1e-10;
+  const m = 2 * Math.floor((n + Math.floor(Math.sqrt(ACC * n))) / 2);
+  let jsum = false;
+  let sum = 0;
+  let bjp = 0;
+  let bj = 1;
+  let ans = 0;
+  for (let j = m; j > 0; j--) {
+    const bjm = j * tox * bj - bjp;
+    bjp = bj;
+    bj = bjm;
+    if (Math.abs(bj) > BIGNO) {
+      bj *= BIGNI;
+      bjp *= BIGNI;
+      ans *= BIGNI;
+      sum *= BIGNI;
+    }
+    if (jsum) sum += bj;
+    jsum = !jsum;
+    if (j === n) ans = bjp;
+  }
+  sum = 2 * sum - bj;
+  return ans / sum;
+}
+
+/** d/dx J_n(x), via the standard identity. */
+function besselJPrime(n, x) {
+  if (n === 0) return -besselJ1(x);
+  return (besselJ(n - 1, x) - besselJ(n + 1, x)) / 2;
+}
+
+const zeroCache = new Map();
+
+/**
+ * The first `count` positive zeros of J_m, ascending.
+ *
+ * Deliberately found by scanning for sign changes and then bisecting, rather
+ * than by Newton from an asymptotic guess. Newton is a trap here: for high
+ * orders J_m is astronomically small near the origin (J_30(0.1) is about
+ * 1e-70), so a Newton step that overshoots towards zero lands somewhere that
+ * *looks* like a root to any residual test. Scanning cannot make that mistake.
+ *
+ * Consecutive zeros of J_m are more than pi apart, so a step of 0.05 cannot skip
+ * a pair. All positive zeros satisfy j_{m,1} > m, which bounds where to start.
+ */
+function besselJZeros(m, count) {
+  const cached = zeroCache.get(m);
+  if (cached && cached.length >= count) return cached.slice(0, count);
+
+  const found = [];
+  const step = 0.05;
+  let x = m === 0 ? 1e-6 : 0.9 * m;
+  let fPrev = besselJ(m, x);
+
+  while (found.length < count && x < 5000) {
+    const xNext = x + step;
+    const fNext = besselJ(m, xNext);
+    if (fPrev === 0) {
+      found.push(x);
+    } else if (fPrev * fNext < 0) {
+      let lo = x;
+      let hi = xNext;
+      let flo = fPrev;
+      for (let i = 0; i < 80; i++) {
+        const mid = (lo + hi) / 2;
+        const fmid = besselJ(m, mid);
+        if (fmid === 0) {
+          lo = mid;
+          hi = mid;
+          break;
+        }
+        if (flo * fmid < 0) hi = mid;
+        else {
+          lo = mid;
+          flo = fmid;
+        }
+      }
+      found.push((lo + hi) / 2);
+    }
+    x = xNext;
+    fPrev = fNext;
+  }
+
+  zeroCache.set(m, found);
+  return found.slice(0, count);
+}
+
+/** The k-th positive zero of J_m (k starting at 1). */
+function besselJZero(m, k) {
+  if (k < 1) throw new RangeError('besselJZero expects k >= 1');
+  return besselJZeros(m, k)[k - 1];
+}
+
+return { besselJ0, besselJ1, besselJ, besselJPrime, besselJZeros, besselJZero };
+};
+__defs['audio/synth.js'] = function () {
+/**
+ * Modal synthesis.
+ *
+ * A struck membrane's displacement is a sum over its modes:
+ *
+ *     u(x, t) = sum_k  a_k * phi_k(x) * sin(2 pi f_k t) * exp(-t / tau_k)
+ *
+ * The parts that come from the shape, and are therefore not negotiable:
+ *   - f_k, the frequencies, from sqrt(lambda_k)
+ *   - phi_k, the mode shapes, which decide how hard each mode is driven by a
+ *     strike in a given place
+ *
+ * The parts that are honest modelling choices, because they depend on the
+ * material and the mallet rather than the outline:
+ *   - tau_k, the decay times
+ *   - the wave speed c = sqrt(T / rho), which the pitch slider sets
+ *
+ * Note what is NOT in that second list: the pitch you actually hear. Given c,
+ * f_1 = c sqrt(lambda_1) / (2 pi) is fixed by the domain, and since outlines are
+ * normalised to unit area first, that is shape information rather than size. The
+ * slider chooses the reference, the shape chooses where the fundamental lands
+ * relative to it. See `frequencies`.
+ *
+ * The UI says as much. Nothing here is allowed to alter an overtone *ratio*.
+ */
+const { besselJZero } = __req('math/bessel.js');
+
+/** Lumped node areas: each triangle gives a third of its area to each vertex. */
+function nodeWeights(mesh) {
+  const { nodes, nodeCount, triangles, triangleCount } = mesh;
+  const w = new Float64Array(nodeCount);
+  for (let t = 0; t < triangleCount; t++) {
+    const a = triangles[t * 3];
+    const b = triangles[t * 3 + 1];
+    const c = triangles[t * 3 + 2];
+    const ax = nodes[a * 2];
+    const ay = nodes[a * 2 + 1];
+    const area =
+      Math.abs(
+        (nodes[b * 2] - ax) * (nodes[c * 2 + 1] - ay) -
+          (nodes[c * 2] - ax) * (nodes[b * 2 + 1] - ay),
+      ) / 2;
+    const share = area / 3;
+    w[a] += share;
+    w[b] += share;
+    w[c] += share;
+  }
+  return w;
+}
+
+/**
+ * lambda_1 of the unit-area disk, the reference drum the pitch slider names.
+ *
+ * For a disk of radius r, lambda_1 = (j_{0,1} / r)^2. Unit area means pi r^2 = 1,
+ * so r^2 = 1/pi and lambda_1 = j_{0,1}^2 * pi = 18.1684...
+ *
+ * The disk is the right reference for two reasons. By Faber-Krahn it *minimises*
+ * lambda_1 over all domains of a given area, so every other unit-area shape comes
+ * out at or above the slider pitch and never below it. And it is the one shape
+ * whose spectrum this repo knows in closed form, so the reference is exact rather
+ * than meshed.
+ */
+const REFERENCE_LAMBDA1 = besselJZero(0, 1) ** 2 * Math.PI;
+
+/**
+ * The same reference, for a Korteweg fluid rather than an ideal membrane.
+ *
+ * The disk's Dirichlet eigenvalues `mu` become `alpha mu^2 + mu` once the capillarity
+ * term is switched on (with a hinged rim the operator is a polynomial in the Dirichlet
+ * Laplacian, so it keeps the same eigenfunctions and this is exact). Without this the
+ * reference would stay at its membrane value while the whole spectrum climbed, and the
+ * pitch slider would appear to drift every time alpha moved - which would make the one
+ * knob the app is about unusable.
+ *
+ * The nematic term is deliberately left out: it depends on the director's orientation
+ * relative to each mode, which for a disk is not a single number, and the reference has
+ * to be a fixed post to measure against rather than something that follows the drum.
+ * Turning the director therefore still moves the pitch, which is the point.
+ */
+function referenceLambda(alpha = 0) {
+  const mu = REFERENCE_LAMBDA1;
+  return alpha * mu * mu + mu;
+}
+
+/**
+ * Frequencies in Hz.
+ *
+ * f_k = baseHz * sqrt(lambda_k / lambda_ref).
+ *
+ * The physics is f_k = c sqrt(lambda_k) / (2 pi), with c = sqrt(T / rho) set by
+ * the tension and the areal density. So one constant, c, is chosen by the pitch
+ * slider, and everything after that - including which note the fundamental lands
+ * on - comes from the domain.
+ *
+ * This deliberately does NOT pin f_1 to `baseHz`. Pinning it silently re-chose a
+ * different c for every outline, which cancelled exactly the part of the spectrum
+ * that says most about the shape: since shapes are normalised to unit area first,
+ * lambda_1 is pure shape information, and it varies by a factor of ~2 across the
+ * built-in presets (18.2 for the disk to 35.7 for a Kac drum, i.e. 5.9
+ * semitones). All of that was being discarded before it reached the ear, and
+ * because 84-94% of the audible energy sits in mode 1, discarding it made every
+ * drum open on the same note and left the shapes nearly indistinguishable.
+ *
+ * Ratios within one drum are untouched: f_k / f_1 is still exactly
+ * sqrt(lambda_k / lambda_1).
+ *
+ * The eigenvalue is `k^2` for the nematic Helmholtz-Korteweg operator just as it is
+ * for the Laplacian, so `f ~ sqrt(lambda)` needs no correction. What changes is the
+ * *spacing*: `lambda` now grows like `alpha mu^2 + mu` rather than like `mu`, so the
+ * overtones spread out as alpha rises and the drum turns into a plate. That
+ * dispersion is the audible signature of the Korteweg term.
+ */
+function frequencies(eigenvalues, baseHz = 130, alpha = 0) {
+  const out = new Float64Array(eigenvalues.length);
+  if (!eigenvalues.length) return out;
+  const root = Math.sqrt(referenceLambda(alpha));
+  for (let k = 0; k < eigenvalues.length; k++) {
+    out[k] = (baseHz * Math.sqrt(eigenvalues[k])) / root;
+  }
+  return out;
+}
+
+/**
+ * How strongly a strike at (px, py) drives each mode.
+ *
+ * This is the projection of the mallet's force distribution onto each mode:
+ * a_k = integral(phi_k * g), with g a normalised Gaussian of the given radius.
+ * Two consequences fall out for free, both audible:
+ *   - striking a mode's nodal line cannot excite that mode at all
+ *   - a wide mallet cannot excite fine modes, so it sounds duller
+ */
+function strikeAmplitudes(mesh, modes, px, py, radius, weights = null) {
+  const { nodes, nodeCount } = mesh;
+  const w = weights || nodeWeights(mesh);
+  const g = new Float64Array(nodeCount);
+  const r2 = Math.max(1e-9, radius * radius);
+  let sum = 0;
+
+  for (let i = 0; i < nodeCount; i++) {
+    const dx = nodes[i * 2] - px;
+    const dy = nodes[i * 2 + 1] - py;
+    const v = Math.exp(-(dx * dx + dy * dy) / r2) * w[i];
+    g[i] = v;
+    sum += v;
+  }
+
+  if (sum <= 0) {
+    // Degenerate mallet: fall back to the single nearest node.
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < nodeCount; i++) {
+      const dx = nodes[i * 2] - px;
+      const dy = nodes[i * 2 + 1] - py;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    g.fill(0);
+    g[best] = 1;
+    sum = 1;
+  }
+
+  for (let i = 0; i < nodeCount; i++) g[i] /= sum;
+
+  const amps = new Float64Array(modes.length);
+  for (let k = 0; k < modes.length; k++) {
+    const phi = modes[k];
+    let acc = 0;
+    for (let i = 0; i < nodeCount; i++) acc += g[i] * phi[i];
+    amps[k] = acc;
+  }
+  return amps;
+}
+
+/**
+ * Squared mass norm of each stored mode, integral(phi_k^2).
+ *
+ * `solveDrum` normalises every mode to a *peak* of 1 so the colour map has a
+ * predictable range. That is the wrong normalisation for a modal expansion: the
+ * coefficient of phi_k in u = sum c_k phi_k is only integral(phi_k g) when the
+ * modes are orthonormal in the mass inner product. Dividing the projection by
+ * this restores that, and it matters - the norm varies by a factor of ~2 across
+ * the first sixteen modes of a disk, so without it high modes come out several
+ * times too loud for no physical reason.
+ */
+function modeNorms(mesh, modes, weights = null) {
+  const w = weights || nodeWeights(mesh);
+  const out = new Float64Array(modes.length);
+  for (let k = 0; k < modes.length; k++) {
+    const phi = modes[k];
+    let acc = 0;
+    for (let i = 0; i < phi.length; i++) acc += w[i] * phi[i] * phi[i];
+    out[k] = acc;
+  }
+  return out;
+}
+
+/**
+ * Turns a geometric strike projection into the modal amplitudes you actually
+ * hear. Three factors, none of which touches a frequency:
+ *
+ *  1. 1 / integral(phi_k^2) - the mass normalisation described above.
+ *  2. 1 / omega_k. A mallet delivers an impulse of *force*, which sets the
+ *     membrane's initial velocity rather than its displacement. Solving
+ *     u_k(0) = 0, u_k'(0) = a_k gives u_k(t) = (a_k / omega_k) sin(omega_k t),
+ *     so displacement carries a 6 dB/octave rolloff. Leaving it out is why the
+ *     old code produced sixteen inharmonic partials at *equal* level, which is
+ *     the recipe for a gong, not a drum.
+ *  3. The mallet's contact time. No beater is an impulse: a force pulse lasting
+ *     T cannot pump a mode whose period is much shorter than T. Modelled as a
+ *     one-pole rolloff with its corner at `contactRatio` times `refHz`.
+ *
+ * `refHz` is the reference pitch (the slider), NOT this drum's own fundamental.
+ * One mallet has one contact time, so the corner must not move when the outline
+ * changes; keying it to f_1 would have handed every shape a different beater as
+ * soon as f_1 stopped being pinned. Keying it to the slider keeps the original
+ * intent - the timbre does not drift as you move the pitch - while leaving the
+ * mallet identical across shapes. Defaults to freqs[0] so a caller that has no
+ * reference behaves as before.
+ *
+ * Factor 3 is a modelling choice about the mallet and is declared as such. The
+ * first two are not choices; they were missing.
+ *
+ * Zeros are preserved exactly, so "striking a nodal line cannot excite this
+ * mode" survives untouched.
+ */
+function audibleAmps(amps, norms, freqs, contactRatio = 3, refHz = 0) {
+  const out = new Float64Array(amps.length);
+  if (!amps.length || !(freqs[0] > 0)) return out;
+  const ref = refHz > 0 ? refHz : freqs[0];
+  const cut = Math.max(0.5, contactRatio) * ref;
+  for (let k = 0; k < amps.length; k++) {
+    const n2 = norms[k] > 1e-12 ? norms[k] : 1;
+    // 1 / omega_k, up to the global constant 2 pi ref that the gain absorbs.
+    const ratio = freqs[k] / ref;
+    const lowpass = 1 / (1 + (freqs[k] / cut) * (freqs[k] / cut));
+    out[k] = (amps[k] / n2 / Math.max(1e-9, ratio)) * lowpass;
+  }
+  return out;
+}
+
+/**
+ * A single loudness reference for one drum: the total drive of the hardest
+ * available strike, taken at the fundamental's own peak.
+ *
+ * The renderer scales by this instead of per-strike normalising, so a strike near
+ * the rim stays quieter than one in the middle - that difference is information
+ * the physics is trying to convey - while nothing ever reaches the limiter.
+ */
+function strikeHeadroom(
+  mesh,
+  modes,
+  norms,
+  freqs,
+  weights,
+  radius,
+  contactRatio = 3,
+  refHz = 0,
+) {
+  const phi1 = modes[0];
+  let best = 0;
+  let node = 0;
+  for (let i = 0; i < phi1.length; i++) {
+    const a = Math.abs(phi1[i]);
+    if (a > best) {
+      best = a;
+      node = i;
+    }
+  }
+  const amps = strikeAmplitudes(
+    mesh,
+    modes,
+    mesh.nodes[node * 2],
+    mesh.nodes[node * 2 + 1],
+    radius,
+    weights,
+  );
+  const heard = audibleAmps(amps, norms, freqs, contactRatio, refHz);
+  let l1 = 0;
+  for (let k = 0; k < heard.length; k++) l1 += Math.abs(heard[k]);
+  return l1 > 1e-12 ? l1 : 1;
+}
+
+/**
+ * Decay time per mode, from Rayleigh damping: C = alpha M + beta K, the standard
+ * proportional-damping model for exactly this kind of finite element system. In
+ * modal coordinates that is
+ *
+ *     1 / tau_k = alpha + beta omega_k^2
+ *
+ * so loss grows with the *square* of frequency. That is the important part. The
+ * old law used a tunable power of the frequency ratio, whose exponent sat below 1
+ * at the default setting, leaving the high inharmonic cluster ringing for half a
+ * second. A real membrane loses those partials in tens of milliseconds, and that
+ * fast darkening is most of what makes a drum read as a pitched thud.
+ *
+ * `brightness` in [0, 1] moves weight from the stiffness term to the mass term.
+ *
+ * `refHz` plays the same role as in `audibleAmps`: alpha and beta are properties
+ * of the material and the air, so the absolute frequency is what decides how fast
+ * a mode dies. Measuring omega against this drum's own fundamental would instead
+ * give every outline its own alpha and beta, so a taut little shape would ring
+ * exactly as long as a slack big one. Keyed to the slider, a shape that sits
+ * higher because of its geometry also decays faster, which is the audible half of
+ * why shapes differ. Defaults to freqs[0], which reproduces the old behaviour.
+ */
+function decayTimes(freqs, baseSeconds = 1.7, brightness = 0.5, refHz = 0) {
+  const out = new Float64Array(freqs.length);
+  if (!freqs.length) return out;
+  const ref = refHz > 0 ? refHz : freqs[0];
+  const stiff = 0.96 - 0.9 * brightness; // 0.96 (dull) .. 0.06 (bright)
+  const mass = 1 - stiff;
+  const rate = 1 / Math.max(0.02, baseSeconds);
+  for (let k = 0; k < freqs.length; k++) {
+    const ratio = ref > 0 ? freqs[k] / ref : 1;
+    out[k] = Math.max(0.006, 1 / (rate * (mass + stiff * ratio * ratio)));
+  }
+  return out;
+}
+
+/**
+ * Renders a strike into a mono Float32Array.
+ *
+ * Sums the decaying sinusoids directly. A struck membrane starts flat and
+ * moving, so each mode starts at zero displacement - hence sine rather than
+ * cosine, and no click at onset.
+ *
+ * `gain` is the caller's job to set so the sum lands near full scale. The tanh
+ * below is a safety net and nothing more: it used to be doing real work, because
+ * a fixed gain of 3.2 drove sixteen modes to a pre-limiter peak of about 11, and
+ * two thirds of the first 300 ms of every strike came out of the limiter hard
+ * clipped. See `strikeHeadroom`.
+ */
+function renderStrike({
+  freqs,
+  amps,
+  taus,
+  sampleRate = 48000,
+  duration = null,
+  gain = 1,
+}) {
+  const longest = taus.length ? Math.max(...taus) : 0.3;
+  const seconds = Math.min(4.5, Math.max(0.25, duration ?? longest * 2.9));
+  const length = Math.max(1, Math.floor(seconds * sampleRate));
+  const out = new Float32Array(length);
+
+  const nyquist = sampleRate / 2;
+  for (let k = 0; k < freqs.length; k++) {
+    const f = freqs[k];
+    if (!(f > 0) || f >= nyquist) continue; // never alias
+    const a = amps[k] * gain;
+    if (Math.abs(a) < 1e-6) continue;
+    const tau = taus[k];
+
+    // Evaluate by recurrence rather than calling sin and exp per sample. Two
+    // Math calls per sample across sixteen modes and a quarter of a million
+    // samples is on the order of four million transcendental evaluations, which
+    // is enough main-thread work to visibly stall the animation when strikes come
+    // quickly. Rotating a unit vector and scaling an envelope is a handful of
+    // multiplies instead, and the drift over a few hundred thousand steps is
+    // around 1e-10 relative - far below the 16-bit floor we render to.
+    const w = (2 * Math.PI * f) / sampleRate;
+    const cosw = Math.cos(w);
+    const sinw = Math.sin(w);
+    const decay = Math.exp(-1 / (tau * sampleRate));
+
+    // Stop once this mode is inaudible instead of grinding out silence.
+    const audibleSamples = Math.ceil(6.9 * tau * sampleRate); // exp(-6.9) ~ 1e-3
+    const nEnd = Math.min(length, audibleSamples);
+
+    let sin = 0;
+    let cos = 1;
+    let env = 1;
+    for (let n = 0; n < nEnd; n++) {
+      out[n] += a * sin * env;
+      const nextSin = sin * cosw + cos * sinw;
+      cos = cos * cosw - sin * sinw;
+      sin = nextSin;
+      env *= decay;
+    }
+  }
+
+  // Soft limiter rather than peak normalisation: a strike near the rim really is
+  // quieter than one in the middle, and flattening that would throw away
+  // information the physics is trying to tell you.
+  for (let n = 0; n < length; n++) out[n] = Math.tanh(out[n]);
+
+  // Short fade-out so truncation cannot click.
+  const fade = Math.min(length, Math.floor(0.012 * sampleRate));
+  for (let i = 0; i < fade; i++) {
+    out[length - fade + i] *= 1 - i / fade;
+  }
+  return out;
+}
+
+/** Displacement field at time t, for animating the drumhead as it rings. */
+function fieldAtTime(modes, amps, freqs, taus, t, out) {
+  const n = out.length;
+  out.fill(0);
+  for (let k = 0; k < modes.length; k++) {
+    const env = Math.exp(-t / taus[k]);
+    if (env < 1e-4) continue;
+    const c = amps[k] * Math.sin(2 * Math.PI * freqs[k] * t) * env;
+    if (Math.abs(c) < 1e-9) continue;
+    const phi = modes[k];
+    for (let i = 0; i < n; i++) out[i] += c * phi[i];
+  }
+  return out;
+}
+
+/** Minimal 16-bit PCM WAV container. */
+function encodeWav(samples, sampleRate = 48000) {
+  const bytesPerSample = 2;
+  const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample);
+  const view = new DataView(buffer);
+  const writeStr = (offset, s) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
+  };
+
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * bytesPerSample, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * bytesPerSample, true);
+  view.setUint16(32, bytesPerSample, true);
+  view.setUint16(34, 8 * bytesPerSample, true);
+  writeStr(36, 'data');
+  view.setUint32(40, samples.length * bytesPerSample, true);
+
+  let o = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const v = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+    o += 2;
+  }
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+return { nodeWeights, REFERENCE_LAMBDA1, referenceLambda, frequencies, strikeAmplitudes, modeNorms, audibleAmps, strikeHeadroom, decayTimes, renderStrike, fieldAtTime, encodeWav };
+};
+__defs['audio/notes.js'] = function () {
+/**
+ * Turning frequencies into things a musician can read, and measuring how
+ * un-musical a drum's overtones are.
+ */
+
+const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/** Nearest equal-tempered note to a frequency, plus the error in cents. */
+function freqToNote(freq, a4 = 440) {
+  if (!(freq > 0)) return { name: '-', octave: 0, cents: 0, label: '-' };
+  const midiExact = 69 + 12 * Math.log2(freq / a4);
+  const midi = Math.round(midiExact);
+  const cents = Math.round((midiExact - midi) * 100);
+  const name = NAMES[((midi % 12) + 12) % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  const sign = cents > 0 ? '+' : '';
+  return {
+    name,
+    octave,
+    cents,
+    label: `${name}${octave}${cents === 0 ? '' : ` ${sign}${cents}\u00A2`}`,
+  };
+}
+
+/**
+ * How close the overtone ratios are to small whole numbers.
+ *
+ * A plucked string is (nearly) harmonic: its overtones sit at 2x, 3x, 4x the
+ * fundamental, which is why it has a definite pitch. A drum is not: its ratios
+ * are irrational, which is why a drum sounds like a thud rather than a note.
+ * Returns a mean absolute deviation, in cents, from the nearest harmonic.
+ */
+function harmonicity(freqs) {
+  if (freqs.length < 2) return { centsOff: 0, verdict: 'single mode' };
+  const f0 = freqs[0];
+  let total = 0;
+  let n = 0;
+  for (let k = 1; k < freqs.length; k++) {
+    const ratio = freqs[k] / f0;
+    const nearest = Math.max(1, Math.round(ratio));
+    total += Math.abs(1200 * Math.log2(ratio / nearest));
+    n++;
+  }
+  const centsOff = total / n;
+  const verdict =
+    centsOff < 15
+      ? 'almost harmonic - this shape has a real pitch'
+      : centsOff < 60
+        ? 'partly harmonic'
+        : 'inharmonic - a thud rather than a note';
+  return { centsOff, verdict };
+}
+
+/** Overtone ratios relative to the fundamental. */
+function ratios(freqs) {
+  if (!freqs.length) return [];
+  return Array.from(freqs, (f) => f / freqs[0]);
+}
+
+return { freqToNote, harmonicity, ratios };
+};
+return __req;
+})();
+
+const { Board } = load('app/canvas.js');
+const { PRESETS_BY_ID, normalizeShape } = load('app/presets.js');
+const {
+  nodeWeights, modeNorms, frequencies, strikeAmplitudes, audibleAmps,
+  strikeHeadroom, decayTimes, renderStrike, fieldAtTime,
+} = load('audio/synth.js');
+const { freqToNote } = load('audio/notes.js');
+
+/* All of these are the app's own settings, kept so that this widget sounds and
+ * solves exactly like the page it is taken from. The three that the app puts on
+ * sliders and this one fixes -- reference pitch, ring-out, mallet -- are its
+ * defaults. See nematicDrum/src/app/main.js for what each one is doing. */
+const MODES = 12;
+const TARGET_NODES = 1200;
+const ALPHA_MIN = 1e-4, ALPHA_MAX = 1e-1;
+const PITCH_HZ = 130;        // reference pitch of a unit-area disc
+const BRIGHTNESS = 0.5;      // ring-out
+const MALLET_RADIUS = 0.09;
+const CONTACT_RATIO = 2.2;
+const TARGET_PEAK = 0.72;
+const MAX_VOICES = 6;
+
+const SHAPES = [{"id": "rectangle", "name": "rectangle"}, {"id": "lshape", "name": "L-shape"}, {"id": "stadium", "name": "stadium"}, {"id": "circle", "name": "circle"}];
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const el = (id) => document.getElementById(id);
+const els = {
+  board: el('board'), prompt: el('prompt'), solving: el('solving'),
+  shapes: el('shapes'), modes: el('modes'), readout: el('readout'),
+  theta: el('ctl-theta'), thetaOut: el('out-theta'),
+  beta: el('ctl-beta'), betaOut: el('out-beta'),
+  alpha: el('ctl-alpha'), alphaOut: el('out-alpha'),
+  sound: el('btn-sound'),
+};
+
+const board = new Board(els.board);
+const state = {
+  shapeId: SHAPES[0].id,
+  drum: null, weights: null, norms: null, freqs: null, headroom: null,
+  fieldBuf: null, strike: null, view: 'mode', selectedMode: 0,
+  solved: null, requestId: 0, muted: false, voices: [],
+};
+
+/* alpha runs on a log scale because what matters about it is its order of
+ * magnitude -- it sweeps from a membrane (alpha -> 0, the plain Helmholtz drum)
+ * to a Kirchhoff-Love plate. beta is held as a fraction of alpha, capped below
+ * 1, which is what the physics and the penalty's coercivity condition assume. */
+function nematicParams() {
+  const alpha = ALPHA_MIN * (ALPHA_MAX / ALPHA_MIN) ** (Number(els.alpha.value) / 1000);
+  return {
+    alpha,
+    beta: alpha * (Number(els.beta.value) / 1000),
+    theta: (Number(els.theta.value) * Math.PI) / 180,
+  };
+}
+
+// ------------------------------------------------------------------- solving
+
+const worker = new Worker(URL.createObjectURL(new Blob(
+  [document.getElementById('drum-worker').textContent], { type: 'text/javascript' })));
+
+const STAGES = {
+  meshing: 'building the mesh', assembling: 'assembling the matrices',
+  factorising: 'factorising', solving: 'finding the modes',
+};
+
+worker.onmessage = (event) => {
+  const msg = event.data;
+  if (msg.id !== state.requestId) return;   // a newer request superseded this one
+  if (msg.type === 'progress') { els.solving.textContent = STAGES[msg.stage] || 'solving'; return; }
+  els.solving.hidden = true;
+  if (msg.type === 'error') { els.prompt.textContent = msg.message; els.prompt.hidden = false; return; }
+  onSolved(msg);
+};
+
+// A worker that fails to start is otherwise invisible: the page just sits on
+// "building the mesh" forever, which is exactly what a silent failure looks like.
+worker.onerror = (e) => {
+  els.solving.hidden = true;
+  els.prompt.textContent = e.message || 'the solver could not be started';
+  els.prompt.hidden = false;
+};
+
+function solve() {
+  const preset = PRESETS_BY_ID.get(state.shapeId);
+  const { polygon, align } = normalizeShape(preset.polygon, preset.latticePitch || 0);
+  const nematic = nematicParams();
+  state.solved = nematic;
+  state.requestId += 1;
+  els.prompt.hidden = true;
+  els.solving.hidden = false;
+  worker.postMessage({
+    id: state.requestId, polygon, align,
+    modes: MODES, targetNodes: TARGET_NODES, ...nematic,
+  });
+}
+
+function onSolved(msg) {
+  state.drum = { mesh: msg.mesh, modes: msg.modes, eigenvalues: msg.eigenvalues };
+  state.weights = nodeWeights(msg.mesh);
+  state.norms = modeNorms(msg.mesh, msg.modes, state.weights);
+  state.freqs = frequencies(msg.eigenvalues, PITCH_HZ, state.solved.alpha);
+  state.headroom = null;
+  state.fieldBuf = new Float64Array(msg.mesh.nodeCount);
+  state.strike = null;
+  state.view = 'mode';
+  state.selectedMode = 0;
+  board.setDrum(state.drum);
+  renderModes();
+  renderReadout();
+  els.prompt.textContent = 'tap the drum';
+  els.prompt.hidden = false;
+}
+
+// --------------------------------------------------------------------- audio
+
+let audioCtx = null;
+let masterBus = null;
+
+/** One shared limiter for every voice: overlapping strikes sum after each
+ *  voice's own soft knee, and the destination has no limiter of its own. */
+function ensureAudio() {
+  if (!audioCtx) {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    audioCtx = new Ctor();
+    masterBus = audioCtx.createDynamicsCompressor();
+    masterBus.threshold.value = -1;
+    masterBus.knee.value = 0;
+    masterBus.ratio.value = 20;
+    masterBus.attack.value = 0.001;
+    masterBus.release.value = 0.1;
+    masterBus.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+/** One loudness scale per mallet and drum, so relative strike loudness survives. */
+function headroom() {
+  if (state.headroom === null) {
+    state.headroom = strikeHeadroom(
+      state.drum.mesh, state.drum.modes, state.norms, state.freqs, state.weights,
+      MALLET_RADIUS, CONTACT_RATIO, PITCH_HZ);
+  }
+  return state.headroom;
+}
+
+/** Sounds and animates a modal mixture -- every sound here goes through this,
+ *  so one mode and a full strike cannot drift apart in how they are made. */
+function ring({ amps, taus, kind, x = 0, y = 0, gain = 1 }) {
+  const { drum, freqs } = state;
+
+  // Reference amplitude for the colour bands: peak displacement near the moment
+  // the fundamental first reaches full swing.
+  const probe = new Float64Array(drum.mesh.nodeCount);
+  fieldAtTime(drum.modes, amps, freqs, taus, 1 / (4 * freqs[0]), probe);
+  let peak = 0;
+  for (let i = 0; i < probe.length; i++) peak = Math.max(peak, Math.abs(probe[i]));
+
+  // t0 is stamped by the first frame that draws this strike, not here: a rAF
+  // callback carries the start time of its own frame, which can be earlier than
+  // a clock read taken during the synchronous work below.
+  state.strike = { kind, x, y, amps, taus, t0: null,
+                   refAmp: peak > 1e-9 ? peak : 1, maxTau: Math.max(...taus) };
+  state.view = 'struck';
+  els.prompt.hidden = true;
+
+  if (state.muted) return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+
+  const samples = renderStrike({ freqs, amps, taus, sampleRate: ctx.sampleRate, gain });
+  const buffer = ctx.createBuffer(1, samples.length, ctx.sampleRate);
+  buffer.copyToChannel(samples, 0);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const out = ctx.createGain();
+  out.gain.value = 0.85;
+  src.connect(out).connect(masterBus);
+
+  // Overlapping strikes are natural -- a real drum does not mute itself when you
+  // hit it again -- but the pile-up has to be bounded.
+  src.addEventListener('ended', () => {
+    const i = state.voices.indexOf(src);
+    if (i >= 0) state.voices.splice(i, 1);
+  });
+  state.voices.push(src);
+  while (state.voices.length > MAX_VOICES) {
+    const oldest = state.voices.shift();
+    try { oldest.stop(); } catch { /* already finished */ }
+  }
+  src.start();
+}
+
+/** A mallet lands at (x, y). Every mode responds in proportion to how much it
+ *  moves there, which is why where you hit changes the timbre. */
+function strike(x, y) {
+  if (!state.drum) return;
+  if (!state.muted) ensureAudio();   // must be the first thing in the gesture, for iOS
+  const projected = strikeAmplitudes(
+    state.drum.mesh, state.drum.modes, x, y, MALLET_RADIUS, state.weights);
+  const amps = audibleAmps(projected, state.norms, state.freqs, CONTACT_RATIO, PITCH_HZ);
+  ring({ amps, taus: decayTimes(state.freqs, 1.7, BRIGHTNESS, PITCH_HZ),
+         kind: 'strike', x, y, gain: TARGET_PEAK / headroom() });
+  markMode(-1);
+  els.readout.replaceChildren(document.createTextNode('all '), strong(String(state.freqs.length)),
+                              document.createTextNode(' modes at once'));
+}
+
+/** Sounds one mode on its own, so the mixture a strike makes becomes legible. */
+function playMode(i) {
+  const { freqs } = state;
+  if (!freqs || i < 0 || i >= freqs.length) return;
+  if (!state.muted) ensureAudio();
+  const amps = new Float64Array(freqs.length);
+  amps[i] = 1;
+  // A lone sinusoid needs far less gain than a strike to reach the same level.
+  ring({ amps, taus: decayTimes(freqs, 1.7, BRIGHTNESS, PITCH_HZ), kind: 'mode', gain: 0.45 });
+  state.selectedMode = i;
+  markMode(i);
+  renderReadout(i);
+}
+
+// ----------------------------------------------------------------- rendering
+
+function frame(now) {
+  try { drawFrame(now); } catch (err) {
+    if (!frame.warned) { frame.warned = true; console.error('frame failed, continuing', err); }
+  }
+  requestAnimationFrame(frame);
+}
+
+function drawFrame(now) {
+  board.resize();
+  board.clear();
+  if (!state.drum) return;
+
+  let refAmp = 1, ringing = false, age = 0;
+
+  if (state.view === 'struck' && state.strike) {
+    if (state.strike.t0 === null) state.strike.t0 = now;
+    const elapsed = Math.max(0, (now - state.strike.t0) / 1000);
+    age = elapsed;
+    // Under prefers-reduced-motion, hold the peak displacement instead of
+    // animating the ring-out: the information survives, the movement does not.
+    const t = reducedMotion ? Math.min(elapsed, 1 / (4 * state.freqs[0])) : elapsed;
+    fieldAtTime(state.drum.modes, state.strike.amps, state.freqs, state.strike.taus,
+                t, state.fieldBuf);
+    refAmp = state.strike.refAmp;
+    ringing = true;
+    board.drawField(state.fieldBuf, refAmp);
+    if (elapsed > state.strike.maxTau * 3.2) {
+      state.view = 'mode';
+      markMode(state.selectedMode);
+      renderReadout(state.selectedMode);
+      els.prompt.hidden = false;
+    }
+  } else {
+    // At rest nothing is vibrating, so nothing may move or change colour: the
+    // resting view is the selected mode as a still figure.
+    state.fieldBuf.set(state.drum.modes[state.selectedMode] || state.drum.modes[0]);
+    board.drawField(state.fieldBuf, 1);
+  }
+
+  // Over the field but under the outline: the director is a property of the
+  // medium the plate is made of, not an annotation floating above it.
+  board.drawDirector();
+  board.drawOutline();
+  if (ringing && state.strike.kind === 'strike') {
+    board.drawStrikeMarker(state.strike.x, state.strike.y, age);
+  }
+}
+
+function strong(s) {
+  const n = document.createElement('strong');
+  n.textContent = s;
+  return n;
+}
+
+function renderReadout(i = 0) {
+  if (!state.freqs) return;
+  const f = state.freqs[i], f0 = state.freqs[0];
+  const note = freqToNote(f);
+  const parts = [document.createTextNode(i === 0 ? 'lowest mode ' : `mode ${i + 1} at `),
+                 strong(`${f.toFixed(1)} Hz`), document.createTextNode(` (${note.label})`)];
+  if (i > 0) parts.push(document.createTextNode(', '), strong(`\u00d7${(f / f0).toFixed(3)}`),
+                        document.createTextNode(' the lowest'));
+  els.readout.replaceChildren(...parts);
+}
+
+function markMode(i) {
+  els.modes.querySelectorAll('button').forEach((b, k) => {
+    b.setAttribute('aria-pressed', String(k === i));
+  });
+}
+
+function renderModes() {
+  els.modes.replaceChildren(...Array.from(state.freqs).map((f, i) => {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', String(i === state.selectedMode));
+    const n = document.createElement('span');
+    n.textContent = i + 1;
+    const hz = document.createElement('span');
+    hz.className = 'hz';
+    hz.textContent = f.toFixed(0);
+    btn.append(n, hz);
+    btn.addEventListener('click', () => playMode(i));
+    li.append(btn);
+    return li;
+  }));
+}
+
+// ------------------------------------------------------------------ controls
+
+SHAPES.forEach((shape) => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'chip';
+  btn.textContent = shape.name;
+  btn.setAttribute('aria-pressed', String(shape.id === state.shapeId));
+  btn.addEventListener('click', () => {
+    state.shapeId = shape.id;
+    els.shapes.querySelectorAll('.chip').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+    solve();
+  });
+  els.shapes.append(btn);
+});
+
+/* The labels report the numbers the papers use. The director is redrawn live
+ * while a slider moves, but re-solving waits for the drag to end: the director
+ * enters the matrix non-linearly, so every value needs its own solve, and a
+ * solve is a few hundred milliseconds. */
+function renderLabels() {
+  const { alpha, beta, theta } = nematicParams();
+  els.alphaOut.textContent = alpha.toExponential(1).replace('e-', 'e\u2212');
+  els.betaOut.textContent = beta === 0
+    ? '0 (isotropic)' : beta.toExponential(1).replace('e-', 'e\u2212');
+  els.thetaOut.textContent = `${Math.round((theta * 180) / Math.PI)}\u00b0`;
+  board.setDirector(theta, beta > 0);
+}
+
+for (const control of [els.theta, els.beta, els.alpha]) {
+  control.addEventListener('input', renderLabels);
+  control.addEventListener('change', () => { renderLabels(); solve(); });
+}
+
+els.board.addEventListener('pointerdown', (e) => {
+  els.board.focus();
+  const p = board.fromClient(e.clientX, e.clientY);
+  if (board.containsShapePoint(p.x, p.y)) strike(p.x, p.y);
+});
+
+els.sound.addEventListener('click', () => {
+  state.muted = !state.muted;
+  els.sound.setAttribute('aria-pressed', String(!state.muted));
+  els.sound.textContent = state.muted ? 'sound off' : 'sound on';
+});
+
+// Hand the deck back the keys and the background clicks this page has no use
+// for: without it, one tap on the drum leaves the clicker and `f` dead for the
+// rest of the talk. The plate keeps its own clicks -- that is how you strike it.
+forwardDeckNav('#board');
+
+// Follow the deck's zoom control, like the other embeds in figs/.
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'html-talk-zoom') {
+    document.documentElement.style.fontSize = e.data.pct + '%';
+  }
+});
+if (window.parent !== window) window.parent.postMessage({ type: 'html-talk-ready' }, '*');
+
+renderLabels();
+solve();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

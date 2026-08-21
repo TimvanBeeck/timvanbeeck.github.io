@@ -1,0 +1,998 @@
+/* ==========================================================================
+   HTML talk template -- CMAM 2026
+   Structure/navigation borrowed from the html-talk template used for
+   philiplederer.com/talks/cmam26, re-skinned to the "Slim" beamer theme of
+   main.tex: GOE blue accent, navyblue panel slides, tcolorbox-style blocks.
+   Colors are exposed as CSS variables so the deck re-skins from one place.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Fira+Mono:wght@400;500&display=swap');
+
+:root {
+  --color-bg: #ffffff;
+  --color-text: #1c1f22;
+  --color-text-soft: #6a747e;
+  --color-dark: #14181c;      /* frame titles are plain black in the theme */
+  --color-panel: #0a2864;     /* \definecolor{navyblue}{RGB}{10,40,100} */
+  --color-primary: #235f96;   /* \definecolor{GOE}{RGB}{35,95,150} */
+  --color-primary-light: #96c3eb; /* \definecolor{CRCLB}{RGB}{150,195,235} --
+                                     the light tint used for text on navy */
+  --color-accent: #b32020;    /* red!70!black: alerts, \alert{} */
+  --color-green: #16876f;
+  --color-border: #dfe3e8;
+  --color-bg-soft: #f3f5f7;   /* lightgray!10 block bodies */
+
+  --font-sans: 'Source Sans 3', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
+  --font-condensed: var(--font-sans);
+  --font-mono: 'Fira Mono', 'SFMono-Regular', Consolas, monospace;
+
+  --slide-padding-x: 5vw;
+  --slide-padding-y: 4.5vh;
+  --progress-height: 4px;
+}
+
+* { box-sizing: border-box; }
+
+/* Base type scale: everything in the deck is sized in rem/em, so this one
+   value sets the deck's "100%" size. The zoom control in the menu multiplies
+   it (see BASE_FONT_PCT in js/slides.js) rather than replacing it. */
+html { font-size: 125%; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--color-panel);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+}
+
+/* ---- slide stack --------------------------------------------------- */
+
+.deck {
+  /* fixed + inset avoids the hairline gaps 100vw/100vh can leave from
+     subpixel rounding, especially when entering/leaving fullscreen */
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--color-bg);
+  padding: var(--slide-padding-y) var(--slide-padding-x);
+}
+
+.slide.is-active { display: flex; }
+
+/* ---- progress bar & slide counter ----------------------------------- */
+
+.progress-bar {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  height: var(--progress-height);
+  background: var(--color-primary);
+  width: 0%;
+  transition: width 0.25s ease;
+  z-index: 20;
+}
+
+.slide-counter {
+  position: absolute;
+  right: 1.4rem;
+  bottom: 0.8rem;
+  font-size: 0.8rem;
+  color: var(--color-text-soft);
+  letter-spacing: 0.02em;
+  z-index: 10;
+}
+
+/* ---- slide menu: subtle toggle + mac-sidebar-style panel ------------- */
+
+.menu-toggle {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 40;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1.5px solid var(--color-text-soft);
+  border-radius: 50%;
+  background: transparent;
+  opacity: 0.22;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.menu-toggle:hover { opacity: 0.6; transform: scale(1.15); }
+.menu-toggle.is-active { opacity: 0.85; }
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: transparent;
+  display: none;
+}
+.menu-backdrop.is-open { display: block; }
+
+.menu-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 50;
+  width: 17rem;
+  max-width: 80vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 3rem 0.7rem 0.9rem;
+  background: rgba(246, 247, 248, 0.78);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.menu-panel.is-open { transform: translateX(0); }
+
+.menu-fullscreen {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-dark);
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 7px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.menu-fullscreen:hover { background: rgba(0, 0, 0, 0.09); }
+
+.menu-zoom {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.7rem 0.1rem;
+}
+.menu-zoom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+.menu-zoom-row label {
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-soft);
+}
+.menu-zoom-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+}
+.menu-zoom-value {
+  width: 2.6rem;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  padding: 0.05rem 0.1rem;
+  -moz-appearance: textfield;
+}
+.menu-zoom-value::-webkit-inner-spin-button,
+.menu-zoom-value::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.menu-zoom-value:focus {
+  outline: none;
+  border-bottom-color: var(--color-primary);
+}
+.menu-zoom-range {
+  width: 100%;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.menu-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.menu-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.menu-item:hover { background: rgba(0, 0, 0, 0.06); }
+
+/* section-divider slides get a blue background so they stand out as
+   landmarks when scanning the outline in the menu */
+.menu-item--section {
+  background: rgba(35, 95, 150, 0.12);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.menu-item--section:hover { background: rgba(35, 95, 150, 0.2); }
+.menu-item--section .menu-item-num { color: var(--color-primary); }
+
+.menu-item.is-current { background: var(--color-primary); color: #fff; }
+
+.menu-item .menu-item-num {
+  flex: 0 0 auto;
+  width: 1.3rem;
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  color: var(--color-text-soft);
+}
+.menu-item.is-current .menu-item-num { color: rgba(255, 255, 255, 0.8); }
+
+.menu-item .menu-item-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- generic slide furniture ---------------------------------------- */
+
+/* Mirrors the Slim frametitle: small letter-spaced GOE eyebrow (the section
+   name) above a large bold black title, with the university logo anchored to
+   the right edge of the same headline band. */
+.slide-eyebrow {
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-primary);
+  margin: 0 0 0.25em 0;
+}
+
+.slide-title {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 1.95rem;
+  color: var(--color-dark);
+  margin: 0 0 0.5em 0;
+  padding-bottom: 0.3em;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+/* per-slide logo, top right, matching the frametitle logo of the theme */
+.slide-logo {
+  position: absolute;
+  top: var(--slide-padding-y);
+  right: var(--slide-padding-x);
+  height: 2.8rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.slide-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  overflow: auto;
+}
+
+.slide-body ul, .slide-body ol { padding-left: 1.2em; }
+.slide-body li { margin-bottom: 0.4em; }
+/* \setbeamertemplate{itemize items}[triangle] */
+.slide-body ul { list-style: none; padding-left: 1.4em; }
+.slide-body ul > li { position: relative; }
+.slide-body ul > li::before {
+  content: '';
+  position: absolute;
+  left: -1em;
+  top: 0.55em;
+  border-left: 0.45em solid var(--color-primary);
+  border-top: 0.3em solid transparent;
+  border-bottom: 0.3em solid transparent;
+}
+.slide-body ul ul > li::before { border-left-color: var(--color-text-soft); }
+.slide-body ol li::marker { color: var(--color-primary); }
+
+.slide-body p { margin: 0 0 0.6em 0; }
+.slide-body a { color: var(--color-primary); text-decoration: underline; }
+.slide-body a:hover { color: var(--color-dark); }
+.slide-body code { font-family: var(--font-mono); font-size: 0.92em; }
+
+/* the "$\rightsquigarrow$ ..." consequence lines under a bullet */
+.aside {
+  display: block;
+  font-size: 0.82em;
+  color: var(--color-text-soft);
+  margin-top: 0.1em;
+}
+.aside::before { content: '\21DD\00a0'; }
+
+/* the \nicearrow sub-bullet of the beamer deck -- selector kept as specific
+   as the generic `.slide-body ul > li::before` triangle it has to override */
+.slide-body ul > li.arrow-item::before {
+  content: '\21D2';
+  position: absolute;
+  left: -1.1em;
+  top: 0;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* two-column layout helper */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+.columns--wide-left  { grid-template-columns: 1.4fr 1fr; }
+.columns--wide-right { grid-template-columns: 1fr 1.4fr; }
+.columns--thirds     { grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
+
+/* ---- title slide ------------------------------------------------------ */
+/* The beamer deck sets \inverttitletrue: navy background, white title,
+   CRCLB accents, decorative triangulated ridge in the bottom-right. */
+
+.slide--title {
+  justify-content: center;
+  background: var(--color-panel);
+  color: #fff;
+}
+
+.slide--title .title-block { max-width: 82%; position: relative; z-index: 2; }
+
+.slide--title h1 {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: #fff;
+  line-height: 1.15;
+  margin: 0 0 0.35em 0;
+}
+
+.slide--title .event {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-primary-light);
+  margin: 0 0 1.4em 0;
+}
+
+.slide--title .accent-rule {
+  width: 4.5rem;
+  height: 3px;
+  background: var(--color-primary-light);
+  margin: 0 0 1.3em 0;
+}
+
+.slide--title .authors {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0 0 0.3em 0;
+}
+.slide--title .authors sup { font-size: 0.6em; }
+
+.slide--title .joint {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 1.6em 0;
+}
+
+.slide--title .affiliation {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-primary-light);
+  margin: 0;
+}
+.slide--title .affiliation sup { font-size: 0.7em; }
+
+/* logo, top left, lined up with the content slides' headline */
+.slide--title .title-logo {
+  position: absolute;
+  top: var(--slide-padding-y);
+  left: var(--slide-padding-x);
+  height: 3rem;
+  width: auto;
+}
+
+/* decorative triangulated mountain ridge, bottom right (the tikz artwork of
+   the beamer title slide) -- purely decorative, sits behind the text */
+.title-ridge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 30rem;
+  max-width: 50%;
+  height: auto;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ---- section divider slide -------------------------------------------- */
+
+.slide--section {
+  background: var(--color-panel);
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.slide--section .section-number {
+  font-family: var(--font-condensed);
+  font-size: 1rem;
+  color: var(--color-primary-light);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  margin: 0 0 0.5em 0;
+}
+
+.slide--section h2 {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 2.6rem;
+  color: #ffffff;
+  margin: 0;
+}
+
+/* ---- emphasis helpers -------------------------------------------------- */
+
+.hl { color: var(--color-primary); font-weight: 600; }
+.hl-accent, .alert { color: var(--color-accent); font-weight: 600; }
+.hl-green { color: var(--color-green); font-weight: 600; }
+.text-soft { color: var(--color-text-soft); }
+
+/* Beamer-\pause / \uncover<n-> equivalent: hidden until an extra
+   click/arrow-press reveals it (see js/slides.js next()/prev()). */
+.fragment {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.fragment.is-visible { opacity: 1; }
+
+/* fragments that should not reserve their space while hidden */
+.fragment--flow {
+  transform: translateY(0.4em);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fragment--flow.is-visible { transform: translateY(0); }
+
+/* ---- blocks (tcolorbox equivalents) ------------------------------------ */
+
+/* \begin{beamerblockbox}{Title} -- navy frame with a filled title bar */
+.box {
+  border: 1px solid var(--color-panel);
+  background: var(--color-bg-soft);
+  border-radius: 3px;
+  margin: 0.55em 0;
+  overflow: hidden;
+}
+.box > .box-title {
+  background: var(--color-panel);
+  color: #fff;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 0.95em;
+  padding: 0.28em 0.7em;
+}
+/* a block with an empty title renders as a plain framed box */
+.box > .box-title:empty { display: none; }
+.box > .box-body { padding: 0.6em 0.8em; }
+.box > .box-body > *:first-child { margin-top: 0; }
+.box > .box-body > *:last-child { margin-bottom: 0; }
+
+/* \begin{beamerexamplebox} -- same, in neutral grey */
+.box--example { border-color: #4a4f55; }
+.box--example > .box-title { background: #4a4f55; }
+
+/* \begin{sketch} -- proof-like environment with a grey rule on the left */
+.sketch {
+  border-left: 2px solid #b9bfc6;
+  padding: 0.1em 0 0.1em 0.8em;
+  margin: 0.6em 0;
+  font-size: 0.95em;
+}
+.sketch::before {
+  content: 'Sketch.';
+  font-style: italic;
+  margin-right: 0.4em;
+}
+.sketch > p { display: inline; }
+.sketch > *:last-child { margin-bottom: 0; }
+
+/* \iCite{...} -- inline grey chip for an in-text citation */
+.cite {
+  display: inline-block;
+  font-weight: 400;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 3px;
+  padding: 0.05em 0.4em;
+  font-size: 0.78em;
+  line-height: 1.5;
+  color: var(--color-text-soft);
+  white-space: nowrap;
+  vertical-align: 0.08em;
+}
+
+/* \iRef{...} -- full-width grey reference box pinned to the slide bottom */
+.ref {
+  position: absolute;
+  left: var(--slide-padding-x);
+  right: calc(var(--slide-padding-x) + 3rem);
+  bottom: calc(var(--slide-padding-y) * 0.55);
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 4px;
+  padding: 0.3em 0.6em;
+  font-size: 0.72rem;
+  color: var(--color-text-soft);
+}
+/* the same chip on the navy title bar of a .box, inverted so it stays legible */
+.box-title .cite {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.ref::before { content: '\1F516\00a0\00a0'; }
+.ref a { color: inherit; }
+
+/* Several references on one slide: each keeps its own pill and its own
+   bookmark marker. Unlike a lone .ref, the stack stays in the flow -- it is a
+   sibling of the (flex: 1) .slide-body, so it lands at the bottom of the slide
+   while still reserving its own height. Absolutely positioned, as a single
+   .ref is, a tall slide body would simply run underneath it. */
+.ref-stack {
+  display: grid;
+  /* one column, so every pill spans the same width, and equal auto rows, so a
+     reference that wraps to two lines sets the height for all of them: the
+     band reads as one block rather than three ragged ones */
+  grid-auto-rows: 1fr;
+  gap: 0.2rem;
+  margin-top: 0.8rem;
+  margin-right: 3rem; /* clear of the slide counter */
+}
+.ref-stack .ref {
+  position: static;
+  margin: 0; /* the margin reset only covers p inside .slide-body */
+  padding: 0.2em 0.5em;
+  /* block-level alignment, not flex: as a flex container the pill would turn
+     the text node and the <em> title into separate items and drop the space
+     between them. Degrades to top-aligned where it is unsupported. */
+  align-content: center;
+}
+
+/* ---- figures ------------------------------------------------------------ */
+
+figure { margin: 0; }
+figure img { max-width: 100%; display: block; margin: 0 auto; }
+
+/* Figures whose file is intrinsically small -- the svg exports from LaTeX are
+   a couple of hundred pt wide -- render at that size, because `max-width` only
+   ever scales an image down. This opts them into filling their column, with
+   the max-height on the img itself keeping the aspect ratio in check. */
+.fig-fill img { width: 100%; height: auto; }
+
+.fig-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: nowrap;
+}
+.fig-row figure { flex: 1 1 0; min-width: 0; }
+.fig-row img { max-height: 62vh; width: 100%; object-fit: contain; }
+
+/* Figures stacked in one slot, one per reveal step: every child is a
+   .fragment, and as soon as a later one is revealed the earlier ones fade
+   back out, so a column shows exactly the figure belonging to the current
+   bullet (motivation: LCD schematic -> scattering scenes).
+   Whatever is faded out must also stop taking pointer events -- an invisible
+   iframe on top would otherwise swallow the click that advances the deck. */
+.fig-stack { display: grid; align-items: end; }
+.fig-stack > * { grid-area: 1 / 1; }
+.fig-stack > .fragment.is-visible:has(~ .fragment.is-visible) { opacity: 0; }
+.fig-stack > .fragment:not(.is-visible),
+.fig-stack > .fragment.is-visible:has(~ .fragment.is-visible) { pointer-events: none; }
+.fig-stack img { max-height: 46vh; }
+
+/* live ngsolve webgui scene (figs/webgui_solution.html), embedded in an
+   iframe so the viewer keeps its own layout; the figure stretches to fill
+   the slide body and the caption stays on one line below it */
+/* the embedded scene already fills its box, so the body must not add the
+   scrollbar its default `overflow: auto` would produce */
+.slide-body--flush { overflow: hidden; }
+
+.webgui-figure {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.webgui-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: none;
+  background: #ffffff;
+  display: block;
+}
+/* browsers draw a default focus ring once the scene is clicked into */
+.webgui-frame:focus,
+.webgui-frame:focus-visible { outline: none; }
+
+.webgui-hint {
+  flex: none;
+}
+
+/* generic embed frame for a self-contained interactive figure in figs/
+   (e.g. a plotly plot). Sized like a still would be, so it can drop into the
+   same slot in a column; see .slide-iframe--column for the narrow case. */
+.slide-iframe {
+  display: block;
+  width: 100%;
+  height: 58vh;
+  margin: 0 auto;
+  border: none;
+  background: #fff;
+}
+.slide-iframe:focus,
+.slide-iframe:focus-visible { outline: none; }
+/* an embed sharing its slide with a text column and a box below it: 45vh made
+   the slide body overflow, which flexbox then resolved by shrinking the whole
+   columns row after layout had already settled */
+.slide-iframe--column { height: 44vh; }
+/* ... and the taller one for a slide where the embed only shares its
+   row with a text column, with nothing underneath */
+.slide-iframe--column-lg { height: 60vh; }
+
+/* A slide that is nothing but its embed: the widget takes the whole frame and
+   brings its own margins, so the slide's padding would only shrink it. The
+   deck's counter and progress bar still sit on top. */
+.slide--widget { padding: 0; }
+.slide-iframe--full { flex: 1; height: 100%; }
+
+/* A "scan me" code laid over a widget slide: the widget owns the whole frame,
+   so the code floats above it in the space the widget leaves empty. Placed to
+   land in the drum's right-hand control column, under the mode table and
+   above its footer row -- the offsets track that panel, not the slide box. */
+.slide-qr {
+  position: absolute;
+  /* spans the panel's column so the code centres under the mode table: the
+     column runs from ~67vw to the widget's right margin */
+  left: 67vw;
+  right: 1vw;
+  bottom: 8vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-align: center;
+}
+.slide-qr img {
+  display: block;
+  /* sized to still scan from the back of a room off a projected slide */
+  width: 29vh;
+  height: 29vh;
+  /* the code carries its own quiet zone, but keep the plate explicit so it
+     never blends into whatever the widget draws behind it */
+  background: #fff;
+  border-radius: 3px;
+}
+.slide-qr:hover { color: var(--color-primary); }
+
+/* Off-screen text that is still read out, and still picked up by the slide
+   menu -- which names each slide after its first heading. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* two scenes side by side (the scattering slide): same reasoning as below --
+   the iframe needs an explicit height, here as tall as the row allows once
+   the captions have their line */
+.fig-row .webgui-frame { flex: none; height: 58vh; }
+
+/* the scene as one figure in a column, rather than owning the whole slide
+   body: an iframe has no intrinsic height, so it needs an explicit one here
+   instead of the flex-filled height it gets on its own slide, and the
+   switcher/caption shrink to the narrower measure */
+.fig-stack .webgui-figure { gap: 0.35rem; }
+.fig-stack .webgui-frame { flex: none; height: 46vh; }
+.fig-stack .view-switcher {
+  justify-content: center;
+  font-size: 0.8rem;
+  margin-top: 0;
+}
+.fig-stack .webgui-hint { font-size: 0.75rem; }
+
+/* dropdown that swaps the src of the iframe in the same slide body, so one
+   slide can flip between several pre-rendered scenes (see the
+   .view-switcher-select handler in js/slides.js) */
+.view-switcher {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7em;
+  margin-top: 0.6em;
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-dark);
+}
+
+.view-switcher-select {
+  font: inherit;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--color-text);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.35em 0.7em;
+  cursor: pointer;
+}
+
+.view-switcher-select:focus {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 1px;
+}
+
+/* two-row grid of stills, e.g. the 3D example */
+.fig-grid {
+  display: grid;
+  /* minmax(0, ...) so the tracks may shrink below the intrinsic size of the
+     stills -- otherwise the wide eval plots push the grid past the slide */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1.2rem;
+  justify-items: center;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+}
+/* each cell is a figure: the image gets whatever height the caption leaves,
+   which keeps the same "never overflow its own cell" behaviour as before */
+.fig-grid > figure {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+  /* fill the row rather than centring in it, so the captions of a row share a
+     baseline even where the stills have different aspect ratios */
+  align-self: stretch;
+}
+.fig-grid img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.fig-grid figcaption {
+  margin-top: 0.15em;
+  font-size: 0.75rem;
+}
+
+figcaption {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-soft);
+  margin-top: 0.4em;
+}
+figcaption a { color: inherit; }
+
+/* inline SVG sketches (the tikz drawings of the beamer deck) */
+.sketch-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* A display equation with a side note: the equation stays centred on the
+   slide and the assumptions sit to its right, so the two do not compete for
+   the same line. `.eq-block` shrinks to the width of the formula, which is
+   what makes the percentage offset of `.eq-badge` below stable -- the badge is
+   a fraction of the formula width, so it stays under the same underbrace at
+   any font size. */
+.eq-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.eq-block { position: relative; }
+.eq-note {
+  margin: 0;
+  max-width: 17ch;
+  font-size: 0.85em;
+  line-height: 1.4;
+  /* nudged into the empty space on the right; a relative offset rather than a
+     bigger flex gap, so the equation keeps its place on the slide */
+  position: relative;
+  left: 2.5rem;
+}
+/* hangs under the "anisotropy" brace; `left` is measured from the left edge of
+   the formula to the centre of that brace. It waits for that brace instead of
+   being a fragment of its own: the brace is a <g> inside the MathJax output,
+   so the two cannot share a data-step, but the badge can watch the class the
+   reveal machinery puts on it. */
+.eq-badge {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  left: 38.4%;
+  /* the block ends half an em below the brace label, so this drops the badge
+     just clear of the word "anisotropy" */
+  top: calc(100% - 0.35em);
+  height: 1.6em;
+  transform: translateX(-50%);
+}
+.eq-block:has(.brace-aniso.is-visible) .eq-badge { opacity: 1; }
+
+/* LaTeX labels inside a sketch: the <foreignObject> box is placed so that its
+   centre sits on the point the label belongs to, and the flex rules below
+   centre the typeset formula in that box. `overflow: visible` keeps a formula
+   that is wider than its box from being clipped, and the font-size is in svg
+   user units, so the labels scale with the picture like the old <text> did. */
+.sketch-label { overflow: visible; }
+.sketch-label > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* keep MathJax from re-wrapping mid-formula on narrow columns */
+mjx-container { overflow-x: auto; overflow-y: hidden; }
+mjx-container[display="true"] { margin: 0.5em 0 !important; }
+
+/* ---- closing slide ------------------------------------------------------ */
+/* \closingframe: navy background, eyebrow + big message + accent rule +
+   sign-off on the left, QR code on a white card on the right. */
+
+.slide--closing {
+  background: var(--color-panel);
+  color: #fff;
+  justify-content: center;
+}
+
+.slide--closing .closing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+}
+
+.slide--closing .closing-eyebrow {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  color: var(--color-primary-light);
+  margin: 0 0 0.6em 0;
+}
+
+.slide--closing h2 {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 3.2rem;
+  color: #fff;
+  margin: 0 0 0.35em 0;
+}
+
+.slide--closing .accent-rule {
+  width: 4.5rem;
+  height: 3px;
+  background: var(--color-primary-light);
+  margin: 0 0 1.1em 0;
+}
+
+.slide--closing .presenter {
+  font-size: 1.25rem;
+  color: #fff;
+  margin: 0 0 0.3em 0;
+}
+
+.slide--closing .affiliation {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-primary-light);
+  margin: 0;
+}
+
+/* acknowledgements under the affiliation: same light-blue as the affiliation,
+   with the names picked out in white so they read from the back of the room */
+.slide--closing .closing-thanks {
+  margin: 1.4em 0 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-primary-light);
+  max-width: 32em;
+}
+.slide--closing .closing-thanks strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.qr-card {
+  flex: 0 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px;
+  line-height: 0;
+}
+.qr-card img { height: 11rem; width: auto; display: block; }
+
+/* The three references sit at the foot of the slide in the flow, with the
+   closing row growing to fill what is left above them -- absolutely
+   positioned, as the single reference used to be, the row would run over
+   them as soon as the list grew. */
+.slide--closing .closing-row { flex: 1 1 auto; }
+.slide--closing .paper-ref-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  margin-top: 1rem;
+}
+.slide--closing .paper-ref {
+  font-size: 0.85rem;
+  color: var(--color-primary-light);
+  margin: 0;
+}
+.slide--closing .paper-ref em { color: #fff; }
+.slide--closing .paper-ref::before { content: '\1F516\00a0\00a0'; }

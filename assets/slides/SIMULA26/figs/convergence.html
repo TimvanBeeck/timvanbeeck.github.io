@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convergence study</title>
+<!-- vendored next to the webgui runtime, so the embed needs no internet -->
+<script src="../js/plotly.min.js"></script>
+<script src="../js/plot-embed.js"></script>
+<style>
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; color: #000;
+    font-family: 'Latin Modern Roman', 'CMU Serif', Georgia, 'Times New Roman', serif;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #plot { flex: 1; min-height: 0; }
+
+  #legend {
+    flex: none;
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 0.1em 1.1em; font-size: 0.92rem; padding: 0.1em 0.6em;
+  }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 0.3em;
+    cursor: pointer; user-select: none;
+  }
+  .legend-item.is-off { opacity: 0.3; }
+  .legend-item:focus-visible { outline: 2px solid #96c3eb; outline-offset: 2px; }
+  .legend-label sup { font-size: 0.75em; }
+
+  /* the one piece that is not part of the static figure, so it stays quiet
+     and out of the way in the bottom right corner */
+  #switcher {
+    flex: none;
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.5em;
+    padding: 0.1em 1em 0.4em; font-size: 0.8rem; color: #555;
+  }
+  #switcher select {
+    font-family: inherit; font-size: 1em; color: #000;
+    background: #f3f5f7; border: 1px solid #cfd5db; border-radius: 4px;
+    padding: 0.1em 0.4em; cursor: pointer;
+  }
+  #switcher select:focus { outline: 2px solid #96c3eb; outline-offset: 1px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="plot"></div>
+  <div id="legend"></div>
+  <div id="switcher">
+    <label for="beta-select">right panel &beta;</label>
+    <select id="beta-select"></select>
+  </div>
+</div>
+<script>
+const D = {"curves": {"-0.001": {"2": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [11.432085922357325, 27.156493661143305, 5.249011277876376, 14.731177375916758, 0.5530540013194745]}, "3": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [69.87508123204034, 10.509016964467563, 0.18610484988697035, 0.03841381155261415, 0.00933526978783979]}, "4": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.8481454209344429, 0.10010926340360327, 0.011682720867479748, 0.0014461435831945697, 0.0001796392352114444]}, "5": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.060129740787821406, 0.010566217007144815, 0.0006990494674262456, 4.489588288424609e-05, 2.8376687379352586e-06]}}, "0.0": {"2": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [6.378440217198081, 40.19559427335813, 6.35474067465597, 1.073921943787299, 0.3874676417390023]}, "3": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [5.768011911155981, 0.881569039302677, 0.15671769071159067, 0.036073134510983776, 0.008899374349803958]}, "4": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.4969881605650571, 0.08927985823977826, 0.010981525046453031, 0.001361672147429529, 0.00016917129784190787]}, "5": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.05348042463928991, 0.009760442924700246, 0.0006448441002856865, 4.136849124653893e-05, 2.6136459537508142e-06]}}, "0.001": {"2": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [5.8773422593900495, 12.623500681996795, 4.10729216764032, 7.520206030966139, 0.46106308274210234]}, "3": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [4.636668517949488, 2.449370735377831, 0.1554921687382267, 0.035166372275425836, 0.008664743877763089]}, "4": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.6263252933425537, 0.08686439584111386, 0.010471931103087258, 0.0012981307615512812, 0.00016127651144602078]}, "5": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.04978581070152252, 0.009142135116501693, 0.0006034263394455078, 3.868498464607722e-05, 2.4439057284206794e-06]}}, "1.0": {"2": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [365.6342847360962, 15.380256538464822, 6.123105456078167, 3.165405829991674, 1.3341144268604261]}, "3": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [3.7234330801117, 1.0291580182482256, 0.22426786966129905, 0.05328825183240127, 0.012812907326235719]}, "4": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.3545755749029737, 0.05130941308595007, 0.006196534125489822, 0.0007492802576980943, 9.278627200706726e-05]}, "5": {"x": [0.0, 1.0, 2.0, 3.0, 4.0], "y": [0.02161716072025049, 0.002403738678722498, 0.00014588679859414477, 8.902804075771481e-06, 2.5224411652825818e-05]}}}, "titles": {"-0.001": "<i>\u03b2</i> = \u221210<sup>\u22123</sup>,<br><span style='font-size:0.88em'><i>\u03b3</i> \u2248 104.97, |\u03b3\ud835\udd38 \u2212 \ud835\udd40|<sub>F</sub> \u2248 0.074</span>", "0.0": "<i>\u03b2</i> = 0,<br><span style='font-size:0.88em'><i>\u03b3</i> \u2248 100, |\u03b3\ud835\udd38 \u2212 \ud835\udd40|<sub>F</sub> = 0.000</span>", "0.001": "<i>\u03b2</i> = 10<sup>\u22123</sup>,<br><span style='font-size:0.88em'><i>\u03b3</i> \u2248 95.02, |\u03b3\ud835\udd38 \u2212 \ud835\udd40|<sub>F</sub> \u2248 0.067</span>", "1.0": "<i>\u03b2</i> = 1,<br><span style='font-size:0.88em'><i>\u03b3</i> \u2248 0.9998, |\u03b3\ud835\udd38 \u2212 \ud835\udd40|<sub>F</sub> \u2248 0.990</span>"}, "guides": {"-0.001": {"2": 70.0, "3": 20.0, "4": 3.5, "5": 1.0}, "0.0": {"2": 50.0, "3": 10.0, "4": 2.5, "5": 0.7}, "0.001": {"2": 40.0, "3": 10.0, "4": 1.5, "5": 0.5}, "1.0": {"2": 70.0, "3": 15.0, "4": 2.5, "5": 0.1}}, "options": [{"value": "-0.001", "label": "\u221210\u207b\u00b3"}, {"value": "0.001", "label": "10\u207b\u00b3"}, {"value": "1.0", "label": "1"}], "baseline": "0.0", "default": "0.001", "style": {"2": {"color": "#009494", "fill": "#006b6b", "symbol": "circle"}, "3": {"color": "#ff4d4d", "fill": "#b83737", "symbol": "pentagon"}, "4": {"color": "#166b16", "fill": "#104d10", "symbol": "triangle-up"}, "5": {"color": "#2f5f9e", "fill": "#224472", "symbol": "diamond"}}, "guideColor": "#808080", "xs": [0.0, 1.0, 2.0, 3.0, 4.0], "axisX": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": false, "zeroline": false, "tickmode": "array", "tickvals": [0.0, 1.0, 2.0, 3.0, 4.0], "title": {"text": "refinement level <i>L</i>"}}, "axisY": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": true, "zeroline": false, "type": "log", "gridcolor": "#bfbfbf", "griddash": "dash", "gridwidth": 1, "exponentformat": "power", "showexponent": "all", "minor": {"ticks": "inside", "ticklen": 2.5, "tickcolor": "#000000", "showgrid": false}, "range": [-6.918539921951662, 3.0630469118254484], "dtick": 2}, "font": {"family": "Latin Modern Roman, CMU Serif, Latin Modern Math, Georgia, Times New Roman, serif", "size": 14, "color": "#000000"}};
+
+const select = document.getElementById('beta-select');
+D.options.forEach((o) => {
+  const el = document.createElement('option');
+  el.value = o.value;
+  el.textContent = o.label;            // unicode superscripts, no markup
+  select.appendChild(el);
+});
+select.value = D.default;
+
+const ORDERS = Object.keys(D.style).map(Number).sort((a, b) => a - b);
+const hidden = new Set();              // what the legend has switched off
+
+function curveTrace(beta, order, axis) {
+  const c = D.curves[beta][order], s = D.style[order];
+  return {
+    x: c.x, y: c.y, type: 'scatter', mode: 'lines+markers',
+    visible: !hidden.has(order),
+    line: {color: s.color, width: 2.4},
+    marker: {color: s.fill, symbol: s.symbol, size: 9,
+             line: {color: s.color, width: 1.4}},
+    xaxis: axis.x, yaxis: axis.y, showlegend: false,
+    hovertemplate: 'L = %{x}<br>error = %{y:.3e}<extra>p = ' + order + '</extra>',
+  };
+}
+
+// O(h^{p-1}) guide: h halves with every refinement level, so the line drops by
+// 2^{-(p-1)} per level from the prefactor the tex placed it at
+function guideTrace(beta, order, axis) {
+  const c = D.guides[beta][order];
+  const x = D.xs, y = x.map((xi) => c * Math.pow(2, -(order - 1) * (xi + 0.5)));
+  return {
+    x: x, y: y, type: 'scatter', mode: 'lines',
+    visible: !(hidden.has(order) || hidden.has('guide')),
+    line: {color: D.guideColor, width: 1.5, dash: 'dashdot'},
+    xaxis: axis.x, yaxis: axis.y, showlegend: false, hoverinfo: 'skip',
+  };
+}
+
+function tracesFor(rightBeta) {
+  const left = {x: 'x', y: 'y'}, right = {x: 'x2', y: 'y2'};
+  const out = [];
+  ORDERS.forEach((o) => out.push(curveTrace(D.baseline, o, left)));
+  ORDERS.forEach((o) => out.push(curveTrace(rightBeta, o, right)));
+  ORDERS.forEach((o) => out.push(guideTrace(D.baseline, o, left)));
+  ORDERS.forEach((o) => out.push(guideTrace(rightBeta, o, right)));
+  return out;
+}
+
+// the group plot of the static figure: two boxed axes side by side, sharing
+// one y range, so switching the right panel never rescales the comparison
+const GAP = [0.475, 0.545];
+const MARGIN = {l: 60, r: 12, t: 58, b: 44};
+
+function layoutFor(rightBeta) {
+  return {
+    xaxis: Object.assign({}, D.axisX, {domain: [0, GAP[0]], anchor: 'y'}),
+    xaxis2: Object.assign({}, D.axisX, {domain: [GAP[1], 1], anchor: 'y2'}),
+    yaxis: Object.assign({}, D.axisY, {domain: [0, 1], anchor: 'x',
+                                       title: {text: 'error'}}),
+    yaxis2: Object.assign({}, D.axisY, {domain: [0, 1], anchor: 'x2',
+                                        matches: 'y', showticklabels: false}),
+    annotations: [
+      {text: D.titles[D.baseline], x: GAP[0] / 2, y: 1.03,
+       xref: 'paper', yref: 'paper', xanchor: 'center', yanchor: 'bottom',
+       showarrow: false, align: 'center'},
+      {text: D.titles[rightBeta], x: (1 + GAP[1]) / 2, y: 1.03,
+       xref: 'paper', yref: 'paper', xanchor: 'center', yanchor: 'bottom',
+       showarrow: false, align: 'center'},
+    ],
+    showlegend: false,                 // the html legend under the plot instead
+    margin: MARGIN,
+    font: D.font,
+    modebar: {orientation: 'v'},
+    hovermode: 'closest',
+    plot_bgcolor: '#fff', paper_bgcolor: '#fff',
+  };
+}
+
+const config = {
+  responsive: true, displaylogo: false, scrollZoom: true, displayModeBar: 'hover',
+  modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+};
+
+const plotDiv = document.getElementById('plot');
+function draw() {
+  return Plotly.react(plotDiv, tracesFor(select.value), layoutFor(select.value), config);
+}
+
+htmlLegend(
+  document.getElementById('legend'),
+  ORDERS.map((o) => ({
+    key: String(o), label: '<i>p</i> = ' + o,
+    color: D.style[o].color, fill: D.style[o].fill, symbol: D.style[o].symbol,
+  })).concat([{
+    key: 'guide', label: '\uD835\uDCAA(<i>h</i><sup>p\u22121</sup>)',
+    color: D.guideColor, width: 1.5, dash: '7 3 1.5 3',
+  }]),
+  (key, on) => {
+    const k = key === 'guide' ? key : Number(key);
+    if (on) hidden.delete(k); else hidden.add(k);
+    draw();
+  });
+
+whenSized(plotDiv, () => {
+  Plotly.newPlot(plotDiv, tracesFor(select.value), layoutFor(select.value), config)
+    .then(() => {
+      select.addEventListener('change', draw);
+      autoResize(plotDiv);
+      forwardDeckNav('#plot');
+      followDeckZoom(plotDiv, {
+        'font.size': D.font.size,
+        'margin.l': MARGIN.l, 'margin.r': MARGIN.r,
+        'margin.t': MARGIN.t, 'margin.b': MARGIN.b,
+      });
+    });
+});
+</script>
+</body>
+</html>
