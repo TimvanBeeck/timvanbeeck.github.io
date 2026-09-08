@@ -13,16 +13,16 @@
       "location": "Vienna, Austria",
       "role": "Speaker", 
       "url": "https://trefftz2026.univie.ac.at/"
-    },
-  {
+    }  ],
+  "past": [
+    {
       "date": "Aug 2026",
       "name": "SIMULA 2026",
       "location": "Oslo, Norway",
       "role": "Speaker", 
       "slides": "SIMULA26/index.html",
       "url": "https://www.simula.no/research/research-areas/scientific-computing/numerical-analysis-and"
-    }  ],
-  "past": [
+    },
     {
       "date": "Jul 2026",
       "name": "CMAM 2026",
