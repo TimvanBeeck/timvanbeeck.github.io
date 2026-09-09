@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>An Embbeded Trefftz DG Approach to Least Squares Finite Element Methods</title>
+<link rel="stylesheet" href="css/style.css">
+
+<!-- MathJax: macros mirror the LaTeX macros of the beamer deck
+     (../CMAM26/commands.tex + main.tex preamble) so slide equations can be
+     pasted over from main.tex with minimal editing. -->
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    macros: {
+      div: "{\\operatorname{div}}",
+      curl: "{\\operatorname{curl}}",
+      grad: "{\\operatorname{grad}}",
+      tr: "{\\operatorname{tr}}",
+      bm: ["{\\boldsymbol{#1}}", 1],
+      vec: ["{\\boldsymbol{#1}}", 1],
+      hessian: "{D^2}",
+      Am: "{\\mathbb{A}}",
+      Idm: "{\\mathbb{I}}",
+      Th: "{\\mathcal{T}_h}",
+      Fh: "{\\mathcal{F}_h}",
+      nHn: ["{\\vec{n}^{\\top} \\hessian #1 \\vec{n}}", 1],
+      dn: "{\\partial_{\\boldsymbol{\\nu}}}",
+      // stmaryrd's \llbracket/\rrbracket are not in MathJax's base set, so
+      // they are built here the same way \dgavg builds its double braces
+      llbracket: "{\\mathopen{[\\mkern-3.2mu[}}",
+      rrbracket: "{\\mathclose{]\\mkern-3.2mu]}}",
+      dgjump: ["{\\llbracket #1 \\rrbracket}", 1],
+      dgavg: ["{\\{\\!\\!\\{#1\\}\\!\\!\\}}", 1],
+      hdgjump: ["{\\llbracket \\underline{#1} \\rrbracket}", 1],
+      ul: ["{\\underline{#1}}", 1],
+      uh: "{\\underline{u}_h}",
+      uvol: "{u_h}",
+      ufac: "{\\sigma_{F}}",
+      vh: "{\\underline{v}_h}",
+      vvol: "{v_h}",
+      vfac: "{\\mu_{F}}",
+      stab: "{\\eta}",
+      seqh: ["{(#1_h)_{h \\in \\mathcal{H}}}", 1],
+      // operators and spaces of main.tex, so its equations paste over verbatim
+      A: "{\\mathcal{A}}",
+      B: "{\\mathcal{B}}",
+      J: "{\\mathcal{J}}",
+      Id: "{\\mathrm{Id}}",
+      IT: "{\\mathbb{T}}",
+      IQ: "{\\mathbb{Q}}",
+      IL: "{\\mathbb{L}}",
+      IP: "{\\mathbb{P}}",
+      Vh: "{V_h}",
+      Fhi: "{\\mathcal{F}_h^{\\mathrm{i}}}",
+      Fhb: "{\\mathcal{F}_h^{\\mathrm{b}}}"
+    },
+    packages: {'[+]': ['boldsymbol', 'mathtools']}
+  },
+  loader: {load: ['[tex]/boldsymbol', '[tex]/mathtools']},
+  svg: { fontCache: 'global' },
+  // Formulas can carry reveal fragments of their own (\class{fragment}{...},
+  // see the equation on the nematic Helmholtz-Korteweg slide). Those elements
+  // exist only once MathJax has typeset the page, which is long after
+  // js/slides.js has run, so announce the end of typesetting for it to pick
+  // the fragments up.
+  startup: {
+    pageReady() {
+      return MathJax.startup.defaultPageReady()
+        .then(() => window.dispatchEvent(new Event('mathjax-ready')));
+    }
+  }
+};
+</script>
+<!-- MathJax is vendored (js/mathjax/, see the README there) rather than loaded from
+     a CDN: the deck has to typeset on conference wifi, or none at all. The bundle is
+     tex-svg-full, which carries the boldsymbol and mathtools extensions the config
+     below asks for -- the plain tex-svg build would fetch those over the network. -->
+<script src="js/mathjax/tex-svg-full.js" id="MathJax-script" async></script>
+</head>
+<body>
+
+<div class="deck">
+
+   <!-- ============================================================ -->
+  <!-- 1. TITLE SLIDE                                                -->
+  <!-- ============================================================ -->
+  <section class="slide slide--title">
+    <img src="img/GOE_Logo_NEG.png" alt="University of G&ouml;ttingen" class="title-logo">
+
+    <!-- decorative triangulated mountain ridge, a direct translation of the
+         tikz artwork on the beamer title slide (main.tex) -->
+    <svg class="title-ridge" viewBox="0 0 450 200" aria-hidden="true">
+      <g fill="#294a82">
+        <polygon points="100,200 210,200 110,85"/>
+        <polygon points="110,85 210,200 205,120"/>
+        <polygon points="320,200 450,200 450,95"/>
+      </g>
+      <g stroke="#577dae" fill="none" stroke-width="0.9">
+        <path d="M110,85 L100,200 M110,85 L210,200 M205,120 L210,200
+                 M320,5 L210,200 M320,5 L320,200 M450,95 L320,200"/>
+      </g>
+      <polyline points="0,200 110,85 205,120 320,5 450,95"
+                fill="none" stroke="#577dae" stroke-width="2"/>
+    </svg>
+
+    <div class="title-block">
+      <p class="event">Trefftz Workshop 2026 &nbsp;&middot;&nbsp; Vienna, Austria &nbsp;&middot;&nbsp; Sep. 9th, 2026</p>
+      <h1>An Embbeded Trefftz DG Approach to Least Squares Finite Element Methods</h1>
+      <div class="accent-rule"></div>
+      <p class="authors">Tim van Beeck<sup>1</sup></p>
+      <p class="joint">joint work with C.&nbsp;Lehrenfeld<sup>1</sup>, P.&nbsp;Stocker<sup>2</sup></p>
+      <p class="affiliation">
+        <sup>1</sup>&nbsp;University of G&ouml;ttingen, Institute for Numerical and Applied Mathematics<br>
+        <sup>2</sup>&nbsp;University of Vienna, Department of Mathematics<br>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 2. SECTION: MOTIVATION                                        -->
+  <!-- ============================================================ 
+  <section class="slide slide--section">
+    <p class="section-number">01</p>
+    <h2>Motivation</h2>
+  </section>
+  -->
+
+  <!-- ---- Motivation ------------------------------------------------ -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Motivation</h2>
+    <div class="slide-body">
+      <!-- the statement, the two equations it turns into, and then the two sides
+           of the method weighed against each other -->
+      <p>Least squares finite element methods (LSFEM) minimize the PDE residual
+        <span class="cite">Bochev, Gunzburger (2009)</span></p>
+
+      <div class="eq-hero">
+        \[ \A u = f \ \text{in } \Omega, \quad \B u = 0 \ \text{on } \partial \Omega
+           \qquad \Longrightarrow \qquad
+           \begin{aligned}
+             u &= \operatorname*{argmin}_{v \in X} \J(v), \\[0.2em]
+             \J(v) &= \Vert f - \A v \Vert^2_{L^2(\Omega)}
+                     + \Vert \B v \Vert^2_{L^2(\partial \Omega)}
+           \end{aligned} \]
+      </div>
+
+      <div class="box-pair">
+        <div class="box box--pro fragment">
+          <div class="box-title">Advantages</div>
+          <div class="box-body">
+            <ul>
+              <li>naturally symmetric positive definite system matrix</li>
+              <li>no inf-sup condition, no compatibility conditions, ...</li>
+              <li>built-in adaptive error estimators</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="box box--con fragment">
+          <div class="box-title">Disadvantages</div>
+          <div class="box-body">
+            <ul>
+              <li>second order problem &rarr; fourth order least square system,
+                need $H^2$-conforming space</li>
+              <li>condition number of the system matrix scales like $\mathcal{O}(h^{-4})$</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <p class="slide-question fragment">Can we <span class="alert">Trefftzify</span>?</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Three paradigms of LS FEM</h2>
+    <div class="slide-body">
+      <!-- the book the three requirements come from, over the cards that state
+           them; the three hold together, and a bullet list makes a set of
+           conditions read as a sequence of steps -->
+      <div class="book-row">
+        <p class="speech fragment order-4">“the first key to defining a practical LSFEM is to
+          recast the given PDE system into first-order system form”</p>
+        <figure class="book-shot">
+          <img src="img/LS.png"
+               alt="Bochev and Gunzburger, Least-Squares Finite Element Methods, Springer, Applied Mathematical Sciences 166">
+        </figure>
+      </div>
+
+      <div class="paradigms">
+        <div class="paradigm fragment order-1">
+          <p class="paradigm-head"><span class="paradigm-n">1</span> Easily assembled</p>
+          <p class="paradigm-body">matrices and right-hand sides of the discrete problem
+            are “easily” computable</p>
+        </div>
+        <div class="paradigm fragment order-2">
+          <p class="paradigm-head"><span class="paradigm-n">2</span> Standard spaces</p>
+          <p class="paradigm-body">no finite element spaces harder to work with than those
+            of the usual Galerkin and mixed-Galerkin methods for the same problem</p>
+        </div>
+        <div class="paradigm fragment order-3">
+          <p class="paradigm-head"><span class="paradigm-n">3</span> Conditioning</p>
+          <p class="paradigm-body">a condition number comparable to those of the same
+            Galerkin and mixed-Galerkin methods</p>
+        </div>
+      </div>
+
+      <ul>
+        <li class="fragment">
+          First order system least squares (FOSLS): introduce auxiliary $\bm{\sigma}$ and solve mixed problem
+          <ul>
+            <li class="arrow-item">requires less conformity, condition number down to $\mathcal{O}(h^{-2})$</li>
+            <li class="arrow-item">increases degrees of freedom</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+   <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Trefftz Least Squares Methods</h2>
+    <div class="slide-body">
+      <!-- bullets left, the numbers they are about on the right; the table
+           gets the wider column of the pair -->
+      <div class="columns columns--wide-right">
+        <ul>
+          <li>
+            Idea is not new: plane wave Trefftz LS methods for Helmholtz
+            <span class="cite">Stojek (1998)</span> and <span class="cite">Monk, Wang (1999)</span>
+          </li>
+          <li class="fragment"><span class="alert">Embedded Trefftz DG</span> (ETDG) method
+            constructs the Trefftz space <em>elementwise</em> 
+            <span class="cite">Lehrenfeld, Stocker (2023)</span>
+            <ul>
+              <li class="arrow-item">works for more general problems</li>
+            </ul>
+          </li>
+          <li class="fragment"><span class="alert">Goal:</span> apply the ETDG to LS</li>
+          <ul>
+            <li class="fragment">DG method, work directly with the second order formulation</li>
+            <li class="fragment" data-step="ls-table">Conditioning of $\mathcal{O}(h^{-4})$ unavoidable, but <span class="alert">much cheaper</span> in terms of dofs</li>
+            <li class="fragment" data-step="poly-fig">Well suited for adaptivity with coarsening
+              &rarr; polytopal mesh elements
+              <span class="cite">Lehrenfeld, Stocker, Zienecker (2024)</span></li>
+          </ul>
+        </ul>
+
+        <!-- right column: the paper the first bullet cites, replaced by the
+             numbers as soon as the "much cheaper" bullet is revealed -->
+        <div class="fig-stack fig-stack--center">
+          <figure class="paper-shot paper-shot--sm">
+            <img src="img/MonkWang.png"
+                 alt="Title page of Monk and Wang, A least-squares method for the Helmholtz equation, Comput. Methods Appl. Mech. Engrg. 175 (1999) 121-136">
+          </figure>
+
+          <div class="fragment" data-step="ls-table">
+          <table class="data-table data-table--compact">
+            <caption class="visually-hidden">
+              Helmholtz test case: L2 error and number of degrees of freedom over the
+              polynomial degree p, for the three methods under comparison.
+            </caption>
+            <thead>
+              <tr>
+                <th rowspan="2" scope="col">$p$</th>
+                <th colspan="2" scope="colgroup">TDG&nbsp;<span class="mesh-icons">(<svg class="mesh-icon" viewBox="0 0 12 12" role="img" aria-label="triangle"><polygon points="6,1.4 11,10.6 1,10.6"/></svg><svg class="mesh-icon" viewBox="0 0 12 12" role="img" aria-label="polygon"><polygon points="6,1 11,4.6 9.1,10.6 2.9,10.6 1,4.6"/></svg>)</span></th>
+                <th colspan="2" scope="colgroup" class="group-start">DG&nbsp;<span class="mesh-icons">(<svg class="mesh-icon" viewBox="0 0 12 12" role="img" aria-label="triangle"><polygon points="6,1.4 11,10.6 1,10.6"/></svg><svg class="mesh-icon" viewBox="0 0 12 12" role="img" aria-label="polygon"><polygon points="6,1 11,4.6 9.1,10.6 2.9,10.6 1,4.6"/></svg>)</span></th>
+                <th colspan="2" scope="colgroup" class="group-start">FOSLS&nbsp;<span class="mesh-icons">(<svg class="mesh-icon" viewBox="0 0 12 12" role="img" aria-label="triangle"><polygon points="6,1.4 11,10.6 1,10.6"/></svg>)</span></th>
+              </tr>
+              <tr>
+                <th scope="col">$L^2$-error</th><th scope="col">ndof</th>
+                <th scope="col" class="group-start">$L^2$-error</th><th scope="col">ndof</th>
+                <th scope="col" class="group-start">$L^2$-error</th><th scope="col">ndof</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">2</th><td>6.14&middot;10<sup>&minus;4</sup></td><td>170</td><td class="group-start">6.19&middot;10<sup>&minus;4</sup></td><td>204</td><td class="group-start">2.85&middot;10<sup>&minus;4</sup></td><td>203</td></tr>
+              <tr><th scope="row">3</th><td>1.83&middot;10<sup>&minus;5</sup></td><td>238</td><td class="group-start">1.79&middot;10<sup>&minus;5</sup></td><td>340</td><td class="group-start">5.51&middot;10<sup>&minus;6</sup></td><td>457</td></tr>
+              <tr><th scope="row">4</th><td>3.55&middot;10<sup>&minus;7</sup></td><td>306</td><td class="group-start">3.49&middot;10<sup>&minus;7</sup></td><td>510</td><td class="group-start">1.01&middot;10<sup>&minus;7</sup></td><td>813</td></tr>
+              <tr><th scope="row">5</th><td>6.98&middot;10<sup>&minus;9</sup></td><td>374</td><td class="group-start">6.87&middot;10<sup>&minus;9</sup></td><td>714</td><td class="group-start">1.56&middot;10<sup>&minus;9</sup></td><td>1271</td></tr>
+              <tr><th scope="row">6</th><td>8.66&middot;10<sup>&minus;11</sup></td><td>442</td><td class="group-start">8.39&middot;10<sup>&minus;11</sup></td><td>952</td><td class="group-start">1.46&middot;10<sup>&minus;11</sup></td><td>1831</td></tr>
+            </tbody>
+          </table>
+          <p class="aside aside--center">
+           Laplace problem on a mesh of $\Omega = [0,1]^2$ with $34$ elements.
+          </p>
+          <figure class="poly-fig fragment" data-step="poly-fig">
+            <img src="img/Poly.svg"
+                 alt="A hexagonal element of six triangles, one of them refined, merged into a single polytopal element">
+          </figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">The method</p>
+    <h2 class="slide-title">Embedded Trefftz DG &mdash; the idea</h2>
+    <div class="slide-body">
+      <!-- bullets left, the construction of T on the right; the sketch comes in
+           with the bullet that describes it (data-step="tmat") -->
+      <div class="columns columns--tmat">
+        <ul>
+          <li> <span class="alert"> Goal:</span> want to realize 
+          \[ \IT = \{ v \in \Vh : \Pi_K \A v = 0  \ \forall K \in \Th \} \]
+          </li>
+          <li class="fragment"><span class="alert">Idea:</span> express Trefftz basis $\{ \psi_j \}_{j=1}^M$ in terms of DG basis $\{ \varphi_i \}_{i=1}^N$ of $\Vh = \IP^k(\Th)$ via embedding $\ T \in \mathbb{R}^{N \times M}$
+            \[ \text{Solve } T^\top A T = T^{\top} f \]
+          </li>
+
+          <li class="fragment" data-step="tmat"><span class="alert">Elementwise construction:</span> compute with SVD 
+            \[ T\vert_K = \ker (W_K), \qquad
+               (W_K)_{ij} = (\A \varphi_j, \A \varphi_i)_K \]
+
+          </li>
+
+          <li class="fragment">Inhomogeneous problems $\A u = f$: compute particular solution with a pseudo-inverse,
+            $\bm{u}_f\vert_K = W_K^\dagger \bm{w}_K$, $(w_K)_i = (f, \A \varphi_i)_K$,
+            then $u_h = T \bm{u}_T + \bm{u}_f$
+          </li>
+          <li class="fragment"> $\kappa(\Am^{\text{ETDG}}) \le \kappa(\Am^{\text{DG}})$</li>
+        </ul>
+
+        <figure class="tmat-fig fragment" data-step="tmat">
+          <img src="img/Tmatrix.svg"
+               alt="Construction of T. On each element the local matrix W_K of the products of A applied to the DG basis functions is assembled. An SVD gives the tall thin block T_K, whose columns span its numerical kernel. The blocks form the block-diagonal matrix T with N rows and M columns, which reduces the DG system to T-transpose A T u = T-transpose l.">
+        </figure>
+      </div>
+    </div>
+    <div class="ref-stack">
+    <p class="ref">Lehrenfeld, Stocker, <em>Embedded Trefftz discontinuous Galerkin methods</em>,
+       IJNME, 2023.</p> 
+    <p class="ref">Lederer, Lehrenfeld, Stocker, Voulis, <em> Embedded Trefftz DG framework for the analysis of discretizations with local-global decompositions</em>,
+       arXiv, 2024.</p>
+    </div>
+  </section>
+
+   <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">The method</p>
+    <h2 class="slide-title">Application to Least Squares FEM</h2>
+    <div class="slide-body">
+      <ul>
+        <li class="fragment">DG least squares (DGLS): find $u_h \in V_h \coloneqq \IP^k(\Th)$ such that 
+          \[ u_h \in \arg\min_{v_h \in \Vh} \J_h(v_h), \qquad \J_h(v_h) = \Vert f - \A v_h \Vert^2_{L^2(\Th)} + \vert v_h \vert^2_{j,h} \]
+        </li>
+        <li class="fragment">Conformity is replaced by a jump stabilization: for $\alpha_d, \alpha_n, \alpha_b &gt; 0$
+          \[ j_h(u,v) \coloneqq \alpha_d \bigl( \dgjump{u}, \dgjump{v} \bigr)_{\Fhi}
+             + \alpha_n \bigl( \dgjump{\nabla u \cdot \bm{n}}, \dgjump{\nabla v \cdot \bm{n}} \bigr)_{\Fhi}
+             + \alpha_b \bigl( \B u, \B v \bigr)_{\Fhb},
+             \qquad \vert v \vert^2_{j,h} \coloneqq j_h(v,v) \]
+        </li>
+      </ul>
+
+      <div class="box fragment">
+        <div class="box-title">Embedded Trefftz DG least squares (ETLS)</div>
+        <div class="box-body">
+        We define the projected functional 
+        \[ \widehat{\J}_h(v_h) \coloneqq \Vert \Pi(f - \A v_h) \Vert^2_{L^2(\Th)} + \vert v_h \vert^2_{j,h}. \]
+        The ETLS method then solves the constrained minimization problem
+          \[ \min_{v_h \in \Vh} \widehat{\J}_h(v_h)
+             \qquad \text{subject to} \quad \Pi (\A v_h - f) = 0 \]
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Equivalent mixed formulation --------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">The method</p>
+    <h2 class="slide-title">An equivalent mixed formulation</h2>
+    <div class="slide-body">
+      <ul>
+        <li><span class="alert">A1:</span> the constraint set $\Vh^f$ is nonempty</li>
+        <li><span class="alert">A2:</span> $j_h(\cdot,\cdot)$ is Hermitian positive semidefinite on $\Vh$
+          and $\vert \cdot \vert_{j,h}$ is a <em>norm</em> on $\IT \coloneqq \bigoplus_{K \in \Th} \{ v_h \in \IP^p(K) : \Pi_K (\A v_h) = 0 \}$</li>
+      </ul>
+
+      <div class="box fragment">
+        <div class="box-title">Theorem (Equivalence)</div>
+        <div class="box-body">
+          <p>Under <span class="alert">A1</span>&ndash;<span class="alert">A2</span> the constrained minimization problem has a unique solution, and
+             $u_h \in \Vh$ solves it if and only if</p>
+          \[ \begin{aligned}
+               (\Pi \A u_h, q_h)_{L^2(\Th)} &= (\Pi f, q_h)_{L^2(\Th)}
+                 && \forall\, q_h \in \IQ_h, \\
+               j_h(u_h, v_\IT) &= 0
+                 && \forall\, v_\IT \in \IT.
+             \end{aligned} \]
+        </div>
+      </div>
+
+      <div class="sketch fragment">
+        <p>The first equation is by definition of $\Pi$ ($L^2$-orthogonal projection).</p>
+        <p> For the second: $V_h^f = u_p + \IT$</p>
+        \[ \vert u_h + t v_\IT \vert_{j,h}^2 = \vert u_h \vert_{j,h}^2 + t j_h(u_h, v_\IT) +  t^2 \vert v_\IT \vert_{j,h}^2 \]
+        By assumption: $u_h \mapsto \vert u_h \vert_{j,h}^2$ is strictly convex and coercive on $\IT$, so stationarity is necessary and sufficient for optimality, so 
+        \[\frac{d}{dt}\vert u_h + t v_\IT \vert_{j,h}^2 \vert_{t = 0} = j_h(u_h, v_\IT) \overset{!}{=} 0. \]
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Analysis</p>
+    <h2 class="slide-title">Stability</h2>
+    <div class="slide-body">
+      <div class="box">
+        <div class="box-title">Assumption (local isomorphism, replaces <span class="alert">A1</span>)</div>
+        <div class="box-body">
+          <p>There are $c_{\mathrm{loc}}, C_{\mathrm{loc}}, C_{\mathrm{tr}} &gt; 0$, independent of $h$, with</p>
+          \[ c_{\mathrm{loc}} \Vert v \Vert_{\star,K} \le \Vert \mathcal{R}_K v \Vert_{L^2(K)}
+             \le C_{\mathrm{loc}} \Vert v \Vert_{\star,K} \quad \forall v \in \IL(K), \ K \in \Th,
+             \qquad \vert v_\IL \vert_{j,h} \le C_{\mathrm{tr}} \Vert v_\IL \Vert_{\star,h}, \]
+             <p>where $\mathcal{R}_K v \coloneqq \Pi_K \A v : \IL(K) \to \IQ(K)$.</p>
+        </div>
+      </div>
+
+      <div class="box fragment">
+        <div class="box-title">Theorem (uniform inf-sup stability)</div>
+        <div class="box-body">
+          <p>With $Z_h \coloneqq \IQ_h \times \IT$ and
+             $B_h(v_h,(q_h,w_\IT)) \coloneqq (\Pi \A v_h, q_h)_{L^2(\Th)} + j_h(v_h,w_\IT)$,</p>
+          \[ \sup_{0 \ne z_h \in Z_h} \frac{\vert B_h(v_h,z_h) \vert}{\Vert z_h \Vert_{Z,h}}
+             \ge \bigl( C_{\mathrm{stab}} \bigr)^{-1} \Vert v_h \Vert_{\mathrm{ETLS},h}
+             \qquad \forall v_h \in \Vh, \]
+          <p>where $\Vert v_h \Vert^2_{\mathrm{ETLS},h} = \Vert \Pi \A v_\IL \Vert^2_{L^2(\Th)}
+             + \vert v_\IT \vert^2_{j,h}$ is a norm on $\Vh$. </p>
+        </div>
+      </div>
+      <!--
+      <ul>
+        <li class="fragment">Consistency $+$ inf-sup $\Rightarrow$ quasi-optimality: if in addition
+          $\Vert (\Id - \Pi) \A v_h \Vert_{L^2(\Th)} \le C_{\mathrm{def}} \Vert v_h \Vert_{\mathrm{ETLS},h}$, then
+          \[ \Vert u - u_h \Vert_{\mathrm{DGLS},h} \le \bigl( 1 + C_{\mathrm{full}} C_{\mathrm{stab}} \bigr)
+             \inf_{v_h \in \Vh} \Vert u - v_h \Vert_{\mathrm{DGLS},h} \]
+        </li> -->
+      </ul>
+    </div>
+  </section>
+
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Analysis</p>
+    <h2 class="slide-title">Error estimator</h2>
+    <div class="slide-body">
+      <p>We consider the elementwise estimator</p>
+      \[ \eta^2_K \coloneqq \Vert f - \A u_h \Vert^2_{L^2(K)}
+         + \sum_{F \in \Fh \cap \partial K} \Bigl( \Vert \dgjump{u_h} \Vert^2_{L^2(F)}
+         + \Vert \dgjump{\nabla u_h \cdot \bm{n}} \Vert^2_{L^2(F)} \Bigr),
+         \qquad \eta^2 \coloneqq \sum_{K \in \Th} \eta^2_K \]
+      <ul>
+        <li class="fragment">Define two norms on the discrete space $\Vh$:
+          \[ \Vert v_h \Vert^2_{\mathrm{ETLS},h} \coloneqq \widehat{\J}_h(v_h) = \Vert \Pi \A v_h \Vert^2_{L^2(\Th)}
+             + \vert v_h \vert^2_{j,h}, \qquad  \Vert v_h \Vert^2_{\mathrm{DGLS},h} \coloneqq \J_h(v_h) = \Vert \A v_h \Vert^2_{L^2(\Th)}
+             + \vert v_h \vert^2_{j,h}  \]
+        </li>
+        <li class="fragment"> Since $\J_h(u_h) = \Vert u - u_h \Vert^2_{\mathrm{DGLS},h} = \eta^2$ for $u \in H^2(\Omega)$,
+          the estimator is <span class="alert">reliable</span> and <span class="alert">efficient</span> with constant $1$ in the $\Vert \cdot \Vert_{\mathrm{DGLS},h}$ norm
+        </li>
+        <li class="fragment">In the $\Vert \cdot \Vert_{\mathrm{ETLS},h}$ norm reliability is automatic,
+          since $\Vert u - u_h \Vert^2_{\mathrm{ETLS},h} \le \Vert \Pi \Vert^2 \eta^2$</li>
+        <li class="fragment">Efficiency needs control of the projection defect
+          \[ \Vert (\Id - \Pi) \A v_h \Vert_{L^2(\Th)} \le ??? \]
+          <ul>
+            <li class="arrow-item">vanishes whenever $\A \Vh \subseteq \IQ_h$,
+              e.g. for $\A = - \Delta$</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical results</p>
+    <h2 class="slide-title">Basic validation: The Laplace problem</h2>
+    <div class="slide-body">
+      <!-- text left, the figure it argues about on the right; figs/laplace.html
+           is built by code/make_laplace_plot.py from data/numbercrunching_cg.csv
+           and carries the three views in its own dropdown -->
+      <div class="columns columns--figure">
+      <div>
+      <p>We consider the Laplace equation with Dirichlet boundary conditions:</p>
+      \[ - \Delta u = f \text{ in } \Omega, \qquad
+         u = 0 \text{ on } \Gamma_{\text{D}} \]
+      <ul>
+        <li>Here $\A \Vh \subseteq \IQ_h$ for $\IQ(K) = \IP^{k-2}(K)$, so the analysis applies and
+          the estimator is efficient </li>
+        <li class="fragment">$\Omega = (0,1)^2$, $u_{\text{ex}} = e^x \sin y$, source $f = 0$,
+          Dirichlet data from $u_{\text{ex}}$, $p = 2,\dots,5$</li>
+        <li class="fragment">FOSLS as comparison: $\bm{\sigma} = \nabla u$ on the conforming pair
+          $U_h = \IP^p(\Th) \cap H^1(\Omega)$ and $\Sigma_h \subset H(\div;\Omega)$ of
+          order $p-1$:
+          \[ \min_{(v, \bm{\tau}) \in U_h \times \Sigma_h}
+             \Vert \div \bm{\tau} + f \Vert^2_{L^2(\Omega)}
+             + \Vert \bm{\tau} - \nabla v \Vert^2_{L^2(\Omega)}
+             + \alpha \Vert v - g \Vert^2_{L^2(\partial \Omega)} \]
+        </li>
+      </ul>
+      </div>
+
+      <!-- the plot follows the bullets: its own reveal step, one click after the
+           last of them (drop the .fragment to have it up from the start, or give
+           it the last bullet's data-step to pair the two) -->
+      <iframe class="slide-iframe slide-iframe--column-lg fragment" src="figs/laplace.html"
+              title="Laplace problem: L2 error and condition number for Trefftz DG, DG and FOSLS, with a dropdown for the three views"
+              loading="lazy"></iframe>
+      </div>
+    </div>
+  </section>
+  
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Model problem</p>
+    <h2 class="slide-title">The Helmholtz equation</h2>
+    <div class="slide-body">
+      <p>We consider the Helmholtz equation with mixed impedance and sound soft boundary conditions:</p>
+      \[ - \Delta u - \omega^2 u = f \text{ in } \Omega, \qquad
+         \nabla u \cdot \bm{n} - i \omega u = 0 \text{ on } \Gamma_{\text{R}}, \qquad
+         u = 0 \text{ on } \Gamma_{\text{D}} \]
+      <ul>
+        <li> Analysis (local stability under $\omega h \lesssim 1$) similar to <span class="cite">Stocker, Voulis (2026)</span></li>
+        <li class="fragment"><span class="alert">Adaptivity:</span> incoming plane wave scattered by an
+          L-shaped sound-soft obstacle <span class="cite">cf. Bespalov et al. (2019)</span>
+          <ul>
+            <li class="arrow-item">$\Omega = [-1,1]^2 \setminus L$, $\ \Gamma_{\text{D}} = \partial L$,
+              $\ \Gamma_{\text{R}} = \partial \Omega \setminus \Gamma_{\text{D}}$</li>
+            <li class="arrow-item"> $\omega=65$, $p = 7$</li>
+            <li class="arrow-item">D&ouml;rfler marking with $\theta_{\text{ref}} = 0.25$</li>
+            <li class="arrow-item">the estimator picks up the re-entrant corner singularities of $L$
+              without a priori information</li>
+          </ul>
+        </li>
+      </ul>
+      <!-- TODO: convergence plot (data/solslaplace.csv style) + real part of the
+           scattered field on the uniform vs. adaptive mesh -->
+    </div>
+  </section>
+  
+
+
+  <!-- ---- adaptive refinement, one click per level -------------------- -->
+  <!-- Both stacks are generated: code/make_adaptivity_animation.py runs the
+       adaptive loop of the paper (code/adaptivityHelmholtz.py) for both
+       methods and writes the frames plus figs/adaptivity/slide.html, whose two
+       fig-stacks are pasted in below. Re-run it in the ngs env after changing
+       the experiment. data-autoplay makes the deck play the fragments by
+       itself, one a second, once the first has been revealed by hand. -->
+  <section class="slide" data-autoplay="1000">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical results</p>
+    <h2 class="slide-title">Adaptivity for Helmholtz</h2>
+    <div class="slide-body">
+      <div class="columns columns--adaptive">
+        <div class="fig-stack fig-stack--center">
+          <figure data-step="adap-00">
+            <img src="figs/adaptivity/est_00.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-01">
+            <img src="figs/adaptivity/est_01.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-02">
+            <img src="figs/adaptivity/est_02.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-03">
+            <img src="figs/adaptivity/est_03.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-04">
+            <img src="figs/adaptivity/est_04.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-05">
+            <img src="figs/adaptivity/est_05.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-06">
+            <img src="figs/adaptivity/est_06.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-07">
+            <img src="figs/adaptivity/est_07.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-08">
+            <img src="figs/adaptivity/est_08.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-09">
+            <img src="figs/adaptivity/est_09.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-10">
+            <img src="figs/adaptivity/est_10.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-11">
+            <img src="figs/adaptivity/est_11.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-12">
+            <img src="figs/adaptivity/est_12.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-13">
+            <img src="figs/adaptivity/est_13.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-14">
+            <img src="figs/adaptivity/est_14.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-15">
+            <img src="figs/adaptivity/est_15.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-16">
+            <img src="figs/adaptivity/est_16.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="adap-17">
+            <img src="figs/adaptivity/est_17.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+        </div>
+
+        <div class="fig-stack fig-stack--center">
+          <figure data-step="adap-00">
+            <img src="figs/adaptivity/mesh_00.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 850 elements, 12&thinsp;750 dofs<br><span class="text-soft">DG at this step: 850 elements, 30&thinsp;600 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-01">
+            <img src="figs/adaptivity/mesh_01.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 952 elements, 14&thinsp;280 dofs<br><span class="text-soft">DG at this step: 1&thinsp;164 elements, 41&thinsp;904 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-02">
+            <img src="figs/adaptivity/mesh_02.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 1&thinsp;364 elements, 20&thinsp;460 dofs<br><span class="text-soft">DG at this step: 1&thinsp;409 elements, 50&thinsp;724 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-03">
+            <img src="figs/adaptivity/mesh_03.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 2&thinsp;411 elements, 36&thinsp;165 dofs<br><span class="text-soft">DG at this step: 1&thinsp;682 elements, 60&thinsp;552 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-04">
+            <img src="figs/adaptivity/mesh_04.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 3&thinsp;039 elements, 45&thinsp;585 dofs<br><span class="text-soft">DG at this step: 2&thinsp;104 elements, 75&thinsp;744 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-05">
+            <img src="figs/adaptivity/mesh_05.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 3&thinsp;575 elements, 53&thinsp;625 dofs<br><span class="text-soft">DG at this step: 2&thinsp;894 elements, 104&thinsp;184 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-06">
+            <img src="figs/adaptivity/mesh_06.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 4&thinsp;302 elements, 64&thinsp;530 dofs<br><span class="text-soft">DG at this step: 3&thinsp;559 elements, 128&thinsp;124 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-07">
+            <img src="figs/adaptivity/mesh_07.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 5&thinsp;798 elements, 86&thinsp;970 dofs<br><span class="text-soft">DG at this step: 3&thinsp;572 elements, 128&thinsp;592 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-08">
+            <img src="figs/adaptivity/mesh_08.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 6&thinsp;884 elements, 103&thinsp;260 dofs<br><span class="text-soft">DG at this step: 3&thinsp;869 elements, 139&thinsp;284 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-09">
+            <img src="figs/adaptivity/mesh_09.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 8&thinsp;242 elements, 123&thinsp;630 dofs<br><span class="text-soft">DG at this step: 4&thinsp;030 elements, 145&thinsp;080 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-10">
+            <img src="figs/adaptivity/mesh_10.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 9&thinsp;290 elements, 139&thinsp;350 dofs<br><span class="text-soft">DG at this step: 4&thinsp;217 elements, 151&thinsp;812 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-11">
+            <img src="figs/adaptivity/mesh_11.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 10&thinsp;314 elements, 154&thinsp;710 dofs<br><span class="text-soft">DG at this step: 4&thinsp;868 elements, 175&thinsp;248 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-12">
+            <img src="figs/adaptivity/mesh_12.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 11&thinsp;991 elements, 179&thinsp;865 dofs<br><span class="text-soft">DG at this step: 6&thinsp;194 elements, 222&thinsp;984 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-13">
+            <img src="figs/adaptivity/mesh_13.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 13&thinsp;023 elements, 195&thinsp;345 dofs<br><span class="text-soft">DG at this step: 7&thinsp;051 elements, 253&thinsp;836 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-14">
+            <img src="figs/adaptivity/mesh_14.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 14&thinsp;262 elements, 213&thinsp;930 dofs<br><span class="text-soft">DG at this step: 8&thinsp;359 elements, 300&thinsp;924 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-15">
+            <img src="figs/adaptivity/mesh_15.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 15&thinsp;678 elements, 235&thinsp;170 dofs<br><span class="text-soft">DG at this step: 9&thinsp;426 elements, 339&thinsp;336 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-16">
+            <img src="figs/adaptivity/mesh_16.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 17&thinsp;353 elements, 260&thinsp;295 dofs<br><span class="text-soft">DG at this step: 10&thinsp;263 elements, 369&thinsp;468 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-17">
+            <img src="figs/adaptivity/mesh_17.png" alt="adaptively refined mesh">
+            <figcaption>Trefftz DG: 20&thinsp;089 elements, 301&thinsp;335 dofs<br><span class="text-soft">DG at this step: 11&thinsp;548 elements, 415&thinsp;728 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="adap-sol">
+            <img src="figs/adaptivity/solution.png" alt="real part of the computed solution on the final adaptive mesh">
+            <figcaption>$\mathrm{Re}(u_h)$ on the final mesh &mdash; 20&thinsp;089 elements, 301&thinsp;335 dofs</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- the same loop with a coarsening step ------------------------ -->
+  <!-- Both stacks are generated: code/make_polytope_animation.py runs the
+       refine-and-agglomerate loop of code/adaptivityHelmholtz_poly.py and
+       writes the frames plus figs/polytope/slide.html. That one needs the
+       source build (ngsS) -- the polytope module is not in the pip wheel; the
+       final field is rendered afterwards in the venv, see its docstring. -->
+  <section class="slide" data-autoplay="1000">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical results</p>
+    <h2 class="slide-title">Adaptivity with coarsening</h2>
+    <div class="slide-body">
+      <div class="columns columns--adaptive">
+        <div class="fig-stack fig-stack--center">
+          <figure data-step="poly-00">
+            <img src="figs/polytope/est_00.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-01">
+            <img src="figs/polytope/est_01.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-02">
+            <img src="figs/polytope/est_02.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-03">
+            <img src="figs/polytope/est_03.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-04">
+            <img src="figs/polytope/est_04.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-05">
+            <img src="figs/polytope/est_05.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-06">
+            <img src="figs/polytope/est_06.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-07">
+            <img src="figs/polytope/est_07.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-08">
+            <img src="figs/polytope/est_08.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-09">
+            <img src="figs/polytope/est_09.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-10">
+            <img src="figs/polytope/est_10.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-11">
+            <img src="figs/polytope/est_11.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-12">
+            <img src="figs/polytope/est_12.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-13">
+            <img src="figs/polytope/est_13.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+          <figure class="fragment" data-step="poly-14">
+            <img src="figs/polytope/est_14.png" alt="estimator over the number of degrees of freedom">
+          </figure>
+        </div>
+
+        <div class="fig-stack fig-stack--center">
+          <figure data-step="poly-00">
+            <img src="figs/polytope/mesh_00.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 850 polytopes from 850 elements, 12&thinsp;750 dofs<br><span class="text-soft">DG at this step: 850 polytopes, 30&thinsp;600 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-01">
+            <img src="figs/polytope/mesh_01.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 1&thinsp;708 polytopes from 1&thinsp;710 elements, 25&thinsp;620 dofs<br><span class="text-soft">DG at this step: 2&thinsp;302 polytopes, 82&thinsp;872 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-02">
+            <img src="figs/polytope/mesh_02.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 3&thinsp;327 polytopes from 3&thinsp;916 elements, 49&thinsp;905 dofs<br><span class="text-soft">DG at this step: 7&thinsp;967 polytopes, 286&thinsp;812 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-03">
+            <img src="figs/polytope/mesh_03.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 4&thinsp;313 polytopes from 5&thinsp;725 elements, 64&thinsp;695 dofs<br><span class="text-soft">DG at this step: 8&thinsp;796 polytopes, 316&thinsp;656 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-04">
+            <img src="figs/polytope/mesh_04.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 7&thinsp;138 polytopes from 9&thinsp;392 elements, 107&thinsp;070 dofs<br><span class="text-soft">DG at this step: 11&thinsp;491 polytopes, 413&thinsp;676 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-05">
+            <img src="figs/polytope/mesh_05.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 6&thinsp;189 polytopes from 10&thinsp;367 elements, 92&thinsp;835 dofs<br><span class="text-soft">DG at this step: 10&thinsp;258 polytopes, 369&thinsp;288 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-06">
+            <img src="figs/polytope/mesh_06.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 7&thinsp;226 polytopes from 11&thinsp;287 elements, 108&thinsp;390 dofs<br><span class="text-soft">DG at this step: 12&thinsp;909 polytopes, 464&thinsp;724 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-07">
+            <img src="figs/polytope/mesh_07.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 9&thinsp;433 polytopes from 13&thinsp;455 elements, 141&thinsp;495 dofs<br><span class="text-soft">DG at this step: 12&thinsp;743 polytopes, 458&thinsp;748 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-08">
+            <img src="figs/polytope/mesh_08.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 9&thinsp;719 polytopes from 15&thinsp;443 elements, 145&thinsp;785 dofs<br><span class="text-soft">DG at this step: 18&thinsp;614 polytopes, 670&thinsp;104 dofs</span></figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-09">
+            <img src="figs/polytope/mesh_09.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 11&thinsp;992 polytopes from 17&thinsp;476 elements, 179&thinsp;880 dofs</figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-10">
+            <img src="figs/polytope/mesh_10.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 13&thinsp;081 polytopes from 20&thinsp;451 elements, 196&thinsp;215 dofs</figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-11">
+            <img src="figs/polytope/mesh_11.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 13&thinsp;313 polytopes from 21&thinsp;638 elements, 199&thinsp;695 dofs</figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-12">
+            <img src="figs/polytope/mesh_12.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 13&thinsp;891 polytopes from 22&thinsp;139 elements, 208&thinsp;365 dofs</figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-13">
+            <img src="figs/polytope/mesh_13.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 16&thinsp;371 polytopes from 25&thinsp;619 elements, 245&thinsp;565 dofs</figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-14">
+            <img src="figs/polytope/mesh_14.png" alt="the polytopes of the current level">
+            <figcaption>Trefftz DG: 18&thinsp;585 polytopes from 28&thinsp;758 elements, 278&thinsp;775 dofs</figcaption>
+          </figure>
+          <figure class="fragment" data-step="poly-sol">
+            <img src="figs/polytope/solution.png" alt="real part of the computed solution on the final polytopal mesh">
+            <figcaption>$\mathrm{Re}(u_h)$ on the final polytopes &mdash; 18&thinsp;585 polytopes, 278&thinsp;775 dofs</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical results</p>
+    <h2 class="slide-title">Anisotropic Helmholtz</h2>
+    <div class="slide-body">
+      <!-- text left, the live scene right. figs/webgui_aniso.html is the last
+           Draw of code/anisotropicHelmholtz.ipynb, exported by
+           code/make_aniso_widget.py with the deck's scene theme. -->
+      <div class="columns columns--figure">
+      <div>
+      <p>Nothing in the construction is tied to constant coefficients:</p>
+      \[ - \div( \Am \nabla u ) - \omega^2 u = f \text{ in } \Omega, \qquad
+         \Am \nabla u \cdot \bm{n} - i \omega u = 0 \text{ on } \partial \Omega, \]
+      <p>with $\Am \in L^\infty(\Omega, \mathbb{R}^{d \times d})$ symmetric and uniformly positive
+         definite a.e.</p>
+      <ul>
+        <li class="fragment">No plane-wave Trefftz basis is available here
+          <ul>
+            <li class="arrow-item">embedded TDG computes $\IT(K) = \ker(\Pi_K \A)$ elementwise</li>
+          </ul>
+        </li>
+        <li class="fragment">dof reduction is unchanged </li>
+        <li class="fragment">Example: $\Am$ twists by $90^\circ$ over $\vert \bm{x} \vert \le 0.35$
+          \[ \Am(\bm{x}) = R^T\begin{pmatrix}4&0\\0&1\end{pmatrix}R,\qquad R(x,y)=\begin{pmatrix}\cos\!\left(\frac{\pi}{2}e^{-(x^2+y^2)/0.35^2}\right)&-\sin\!\left(\frac{\pi}{2}e^{-(x^2+y^2)/0.35^2}\right)\\\sin\!\left(\frac{\pi}{2}e^{-(x^2+y^2)/0.35^2}\right)&\cos\!\left(\frac{\pi}{2}e^{-(x^2+y^2)/0.35^2}\right)\end{pmatrix}\]
+      </ul>
+      </div>
+
+      <figure class="webgui-figure">
+        <iframe class="webgui-frame" src="figs/webgui_aniso.html"
+                title="Re(u_h) for a Gaussian source in a twisting anisotropic medium"></iframe>
+        <figcaption class="webgui-hint">$\mathrm{Re}(u_h)$, $\omega = 75$, $p = 6$,
+          175&thinsp;552 dofs</figcaption>
+      </figure>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical results</p>
+    <h2 class="slide-title">Advection-reaction-diffusion in non-divergence form</h2>
+    <div class="slide-body">
+      <!-- text left, the convergence figure it argues about on the right;
+           figs/nondiv.svg is built by code/make_experiment_plots.py -->
+      <div class="columns columns--figure">
+      <div>
+      <p>For convex $\Omega$, a matrix field $\Am(x) \in L^\infty(\Omega,\mathbb{R}^{d \times d}_{\text{sym}})$, $\bm{b} \in L^\infty(\Omega,\mathbb{R}^d)$ and $c &gt; 0$:</p>
+      \[ \Am(x) : \hessian u + \bm{b} \cdot \nabla u - c u = f \text{ in } \Omega,
+         \qquad u = 0 \text{ on } \partial \Omega \]
+      <ul>
+        <li>$\Am$ is <em>not</em> assumed differentiable &mdash; there is no divergence form and no
+          standard weak formulation <span class="cite">Lakkis, Mousavi (2021)</span></li>
+        <li class="fragment">Assume that $\Am$ satisfies a <span class="alert">Cordes condition</span> <span class="cite">Smears, S&uuml;li (2013)</span>: $\exists \gamma > 0$ such that $\vert \gamma \Am - \Idm \vert_F < 1$.
+        </li>
+        <li class="fragment"><span class="alert">Test case:</span> $\Omega = (0,1)^2$, $c = 2$,
+          \[ \Am(\bm{x}) = \begin{pmatrix} 1 + \frac{x_1^2}{\vert \bm{x} \vert^2} & \frac{x_1 x_2}{\vert \bm{x} \vert^2} \\[2pt]
+             \frac{x_1 x_2}{\vert \bm{x} \vert^2} & 1 + \frac{x_2^2}{\vert \bm{x} \vert^2} \end{pmatrix},
+             \qquad \bm{b}(\bm{x}) = \begin{pmatrix} x_1 x_2 \\ 1 \end{pmatrix} \]
+          \[ u_{\text{ex}}(\bm{x}) = \vert \bm{x} \vert^{\alpha}, \qquad \alpha = 1.6 \]
+        </li>
+        <li class="fragment" data-step="nondiv-fig">Corner singularity limits uniform refinement</li>
+      </ul>
+      </div>
+
+      <!-- the figure comes in with the bullet it belongs to: same data-step, so
+           one click reveals the pair -->
+      <figure class="plot-figure fragment" data-step="nondiv-fig">
+        <img src="figs/nondiv.svg" alt="L2 error over ndof for p = 2 to 5, uniform and adaptive refinement">
+        <figcaption>solid: adaptive, dashed: uniform</figcaption>
+      </figure>
+      </div>
+    </div>
+  </section>
+
+
+
+
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical results</p>
+    <h2 class="slide-title">Burger's equation</h2>
+    <div class="slide-body">
+      <!-- text left, the convergence figure it argues about on the right;
+           figs/burgers.svg is built by code/make_experiment_plots.py -->
+      <div class="columns columns--figure">
+      <div>
+      <p>Nonlinear $\A$ is not covered by the analysis before , but not outside the method
+         <span class="cite">cf. Stocker, Voulis, Lehrenfeld, Lederer (2026) for Navier&ndash;Stokes</span></p>
+      \[ - \nu \Delta u + u\, ( \bm{b} \cdot \nabla u ) = f \text{ in } \Omega,
+         \qquad u = g \text{ on } \partial \Omega \]
+      <ul>
+        <li class="fragment">$\Omega = (0,1)^2$, $\bm{b} = (1,1)^\top$, $f = 0$, and with $\xi(\bm{x}) = x_1 + x_2 - 1$
+          \[ u_{\text{ex}}(\bm{x}) = - \tanh\bigl( \xi(\bm{x}) / (2\nu) \bigr),
+             \qquad g = u_{\text{ex}} \vert_{\partial \Omega} \]
+          a sharp layer of width $\mathcal{O}(\nu)$ along $\xi(\bm{x}) = 0$</li>
+        <li class="fragment" data-step="burgers-fig"><span class="alert">Adaptivity </span> helps to resolve the layer
+        </li>
+      </ul>
+      </div>
+
+      <!-- the figure comes in with the bullet it belongs to: same data-step, so
+           one click reveals the pair -->
+      <figure class="plot-figure fragment" data-step="burgers-fig">
+        <img src="figs/burgers.svg" alt="L2 error over ndof for TDG and DG, adaptive and uniform refinement">
+        <figcaption>$\nu = 0.05$, D&ouml;rfler marking &mdash; solid: adaptive, dashed: uniform</figcaption>
+      </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- the two Burgers solutions, coarse and converged ---------------- -->
+  <!-- figs/burgers_{dg,tdg}_{coarse,fine}.png, built by
+       code/make_burgers_pictures.py from the paper's adaptive loop; all four
+       panels share the colour scale of the exact solution -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical result</p>
+    <h2 class="slide-title">Burger's equation: computed solutions</h2>
+    <div class="slide-body">
+      <div class="field-grid">
+        <p class="field-grid-head"></p>
+        <p class="field-grid-head">DG ($p = 3$)</p>
+        <p class="field-grid-head">Trefftz DG ($p = 3$)</p>
+
+        <p class="field-grid-row">layer not yet<br>resolved<br><span class="text-soft">$\approx 1800$ dofs</span></p>
+        <img src="figs/burgers_dg_coarse.png" alt="the DG solution on the coarse mesh: the layer is bent away from the diagonal">
+        <img src="figs/burgers_tdg_coarse.png" alt="the Trefftz DG solution on the coarse mesh: the layer sits on the diagonal">
+
+        <p class="field-grid-row">converged<br><span class="text-soft">$\approx 10^5$ dofs</span></p>
+        <img src="figs/burgers_dg_fine.png" alt="the converged DG solution">
+        <img src="figs/burgers_tdg_fine.png" alt="the converged Trefftz DG solution">
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <!-- ============================================================ -->
+  <!-- 7. CONCLUSION                                                 -->
+  <!-- ============================================================ -->
+  <!-- The method in one line, then the three requirements of the motivation
+       slide revisited: the same three cards, in the same order, carrying the
+       verdict for the method instead of the requirement they state. The
+       callback rests on the titles -- keep them in sync with the
+       "Three paradigms of LS FEM" slide. -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Conclusion</p>
+    <h2 class="slide-title">Embedded Trefftz least squares</h2>
+    <div class="slide-body">
+      <p>Minimization over $V_h^f = \{ v_h \in V_h: \Pi(\A v_h - f) = 0 \} = u_p + \IT$</p>
+      \[ \min_{v_h \in \Vh} \widehat{\J}_h(v_h) \ \text{ s.t. } \ \Pi(\A v_h - f) = 0
+         \qquad \Longleftrightarrow \qquad
+         \min_{v_h \in u_p + \IT} \vert v_h \vert^2_{j,h} \]
+
+      <div class="paradigms">
+        <div class="paradigm paradigm--yes fragment">
+          <p class="paradigm-head"><span class="paradigm-n">1</span> Easily assembled</p>
+          <p class="paradigm-verdict"><span class="paradigm-mark">&#10003;</span>
+            <span>usual DG integrals, small elementwise SVD</span></p>
+        </div>
+        <div class="paradigm paradigm--yes fragment">
+          <p class="paradigm-head"><span class="paradigm-n">2</span> Standard spaces</p>
+          <p class="paradigm-verdict"><span class="paradigm-mark">&#10003;</span>
+            <span>standard DG space $\IP^k(\Th)$, no conformity and
+              no auxiliary variable</span></p>
+        </div>
+        <div class="paradigm paradigm--no fragment">
+          <p class="paradigm-head"><span class="paradigm-n">3</span> Conditioning</p>
+          <p class="paradigm-verdict"><span class="paradigm-mark">&#10007;</span>
+            <span>$\mathcal{O}(h^{-4})$ inherited from the ambient DG space</span></p>
+        </div>
+      </div>
+
+      <ul class="buys">
+        <li class="fragment"><span class="alert">Fewer dofs</span> at the same accuracy, in particular for high $p$</li>
+        <li class="fragment"><span class="alert">Adaptivity:</span> $\J_h$ is a reliable estimator, efficient under a resolution condition</li>
+        <li class="fragment"><span class="alert">Flexibility:</span> variable and anisotropic
+          $\Am$, non-divergence form, nonlinear $\A$, polytopal elements</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 8. CLOSING SLIDE                                              -->
+  <!-- ============================================================ -->
+  <section class="slide slide--closing">
+    <div class="closing-row">
+      <div>
+        <p class="closing-eyebrow">An Embedded Trefftz DG Approach to Least Squares Finite Element Methods</p>
+        <h2>Thank you!</h2>
+        <div class="accent-rule"></div>
+        <p class="presenter">Tim van Beeck</p>
+        <p class="affiliation">University of G&ouml;ttingen,<br>
+           Institute for Numerical and Applied Mathematics</p>
+        <p class="closing-thanks">
+          Thanks to <strong>Philip Lederer</strong> for the html-talk template.
+        </p>
+      </div>
+      <div class="qr-card">
+        <img src="figs/ngstrefftz-qr.png" alt="NGSTrefftz documentation">
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<button class="menu-toggle" aria-label="Open slide menu" title="Slides &amp; fullscreen"></button>
+<div class="menu-backdrop"></div>
+<aside class="menu-panel">
+  <button class="menu-fullscreen">
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <path fill="currentColor" d="M4 9V4h5v2H6v3H4zm10-5h5v5h-2V6h-3V4zM4 15h2v3h3v2H4v-5zm14 3v-3h2v5h-5v-2h3z"/>
+    </svg>
+    Fullscreen
+  </button>
+  <div class="menu-zoom">
+    <div class="menu-zoom-row">
+      <label for="zoom-range">Slide size</label>
+      <span class="menu-zoom-input-wrap">
+        <input type="number" id="zoom-value" class="menu-zoom-value" min="50" max="250" step="5" value="100">%
+      </span>
+    </div>
+    <input type="range" id="zoom-range" class="menu-zoom-range" min="50" max="250" step="5" value="100">
+  </div>
+  <nav class="menu-list"></nav>
+</aside>
+
+<span class="slide-counter"></span>
+<div class="progress-bar"></div>
+
+<script src="js/slides.js"></script>
+</body>
+</html>

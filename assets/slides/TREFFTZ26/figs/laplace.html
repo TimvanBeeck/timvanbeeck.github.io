@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laplace problem</title>
+<!-- vendored next to the webgui runtime, so the embed needs no internet -->
+<script src="../js/plotly.min.js"></script>
+<script src="../js/plot-embed.js"></script>
+<style>
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; color: #000;
+    font-family: 'Latin Modern Roman', 'CMU Serif', Georgia, 'Times New Roman', serif;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #plot { flex: 1; min-height: 0; }
+
+  #legend {
+    flex: none;
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 0.1em 1.1em; font-size: 0.92rem; padding: 0.1em 0.6em;
+  }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 0.3em;
+    cursor: pointer; user-select: none;
+  }
+  .legend-item.is-off { opacity: 0.3; }
+  .legend-item:focus-visible { outline: 2px solid #96c3eb; outline-offset: 2px; }
+  .legend-label sup { font-size: 0.75em; }
+
+  /* the one piece that is not part of the static figure, so it stays quiet
+     and out of the way in the bottom right corner */
+  #switcher {
+    flex: none;
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.5em;
+    padding: 0.1em 1em 0.4em; font-size: 0.8rem; color: #555;
+  }
+  #switcher select {
+    font-family: inherit; font-size: 1em; color: #000;
+    background: #f3f5f7; border: 1px solid #cfd5db; border-radius: 4px;
+    padding: 0.1em 0.4em; cursor: pointer;
+  }
+  #switcher select:focus { outline: 2px solid #96c3eb; outline-offset: 1px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="plot"></div>
+  <div id="legend"></div>
+  <div id="switcher">
+    <label for="view-select">view</label>
+    <select id="view-select"></select>
+  </div>
+</div>
+<script>
+const D = {"views": {"error": {"traces": [{"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2, "x": [30, 170, 690, 3040], "y": [0.005847596983148117, 0.00035928006419806306, 5.508443594882844e-05, 1.265549069622046e-05], "hover": "<i>p</i> = 2, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2, "x": [42, 238, 966, 4256], "y": [0.0003671131204615391, 8.025810012810366e-06, 4.894423218213059e-07, 2.2924767241107995e-08], "hover": "<i>p</i> = 3, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2, "x": [54, 306, 1242, 5472], "y": [1.9449604673274836e-05, 1.4997008697389276e-07, 4.980072879361925e-09, 1.2065206885382293e-10], "hover": "<i>p</i> = 4, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2, "x": [66, 374, 1518, 6688], "y": [9.9235282938375e-07, 2.74460262440566e-09, 3.421710615798819e-11, 6.334238243194303e-12], "hover": "<i>p</i> = 5, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2, "x": [36, 204, 828, 3648], "y": [0.005775535631834008, 0.00045053881533078217, 7.070923223852441e-05, 1.944407375979179e-05], "hover": "<i>p</i> = 2, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2, "x": [60, 340, 1380, 6080], "y": [0.0003799046784647069, 7.191577236282492e-06, 4.111831480151023e-07, 1.8661406122828897e-08], "hover": "<i>p</i> = 3, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2, "x": [90, 510, 2070, 9120], "y": [1.8139126387239853e-05, 1.2485047413658052e-07, 3.6294971202250807e-09, 8.472242196149436e-11], "hover": "<i>p</i> = 4, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2, "x": [126, 714, 2898, 12768], "y": [7.897247852144111e-07, 2.1096317852581927e-09, 2.6854794201132418e-11, 5.157532124216892e-12], "hover": "<i>p</i> = 5, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2, "x": [47, 203, 755, 3169], "y": [0.005055465137389354, 0.00025160686173928266, 3.065849564481868e-05, 2.635416404065538e-06], "hover": "<i>p</i> = 2, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2, "x": [97, 457, 1753, 7489], "y": [0.00025535832489021767, 4.337364623893029e-06, 2.402725677859664e-07, 1.0567164374808263e-08], "hover": "<i>p</i> = 3, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2, "x": [165, 813, 3165, 13633], "y": [1.1202056641825796e-05, 6.609489084568905e-08, 1.71205375804616e-09, 3.12832702483142e-11], "hover": "<i>p</i> = 4, ndof = %{x}<br>error = %{y:.2e}"}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2, "x": [251, 1271, 4991, 21601], "y": [5.015449721880666e-07, 1.2577830934585984e-09, 1.6114567282774975e-11, 1.0067634744777587e-12], "hover": "<i>p</i> = 5, ndof = %{x}<br>error = %{y:.2e}"}], "axisX": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": false, "zeroline": false, "type": "log", "exponentformat": "power", "showexponent": "all", "dtick": 1, "range": [1.0, 4.4313838699195935], "minor": {"ticks": "inside", "ticklen": 2.5, "tickcolor": "#000000", "showgrid": false}, "title": {"text": "ndof"}}, "axisY": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": true, "zeroline": false, "type": "log", "gridcolor": "#bfbfbf", "griddash": "dash", "gridwidth": 1, "exponentformat": "power", "showexponent": "all", "minor": {"ticks": "inside", "ticklen": 2.5, "tickcolor": "#000000", "showgrid": false}, "range": [-12.447072549103519, -1.7830225666292352], "dtick": 2, "title": {"text": "<i>L</i><sup>2</sup> error"}}, "labels": [{"x": 1.4771212547196624, "y": -2.233022566629235, "text": "<i>p</i> = 2&nbsp;", "anchor": "right", "valign": "middle"}, {"x": 1.6232492903979006, "y": -3.4352000937247773, "text": "<i>p</i> = 3&nbsp;", "anchor": "right", "valign": "middle"}, {"x": 1.7323937598229686, "y": -4.71108922158558, "text": "<i>p</i> = 4&nbsp;", "anchor": "right", "valign": "middle"}, {"x": 1.8195439355418688, "y": -6.003333887714247, "text": "<i>p</i> = 5&nbsp;", "anchor": "right", "valign": "middle"}], "guides": []}, "cond-h": {"traces": [{"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2, "x": [0.5773502691896257, 0.24253562503633297, 0.1203858530857692], "y": [685.5932642170251, 8575.753540882975, 120184.05226745905], "hover": "<i>h</i> = %{x:.3g}<br>&kappa; = %{y:.2e}"}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2, "x": [0.5773502691896257, 0.24253562503633297, 0.1203858530857692], "y": [894.2933060307425, 36190.67198986197, 510407.42425612616], "hover": "<i>h</i> = %{x:.3g}<br>&kappa; = %{y:.2e}"}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2, "x": [0.5773502691896257, 0.24253562503633297, 0.1203858530857692], "y": [14639.554330811667, 132522.67652270565, 658066.7809147276], "hover": "<i>h</i> = %{x:.3g}<br>&kappa; = %{y:.2e}"}], "axisX": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": false, "zeroline": false, "type": "log", "tickmode": "array", "tickvals": [0.5773502691896257, 0.24253562503633297, 0.1203858530857692], "ticktext": ["0.58", "0.24", "0.12"], "range": [-0.12461727505299444, -1.0333678976754643], "title": {"text": "<i>h</i>"}}, "axisY": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": true, "zeroline": false, "type": "log", "gridcolor": "#bfbfbf", "griddash": "dash", "gridwidth": 1, "exponentformat": "power", "showexponent": "all", "minor": {"ticks": "inside", "ticklen": 2.5, "tickcolor": "#000000", "showgrid": false}, "range": [2.5360665421010413, 6.320586008775253], "dtick": 1, "title": {"text": "condition number"}}, "labels": [{"text": "<i>p</i> = 3", "x": 0.025, "y": 0.975, "paper": true, "anchor": "left", "valign": "top"}], "guides": [{"x": [0.42146569650842675, 0.1348321554560615], "y": [535.8599107791246, 51159.499760078026], "text": "\ud835\udcaa(<i>h</i><sup>\u22124</sup>)", "labelX": -0.3752377672393754, "labelY": 2.7290512674398433, "xanchor": "left", "yanchor": "top"}, {"x": [0.5022947341949744, 0.16011318460407303], "y": [54216.08027990966, 533569.7194690843], "text": "\ud835\udcaa(<i>h</i><sup>\u22122</sup>)", "labelX": -0.7955729044015418, "labelY": 5.727191175030242, "xanchor": "right", "yanchor": "bottom"}]}, "cond-p": {"traces": [{"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2, "x": [2, 3, 4, 5], "y": [3712.1496843426703, 8575.753540882975, 15650.381372429016, 24328.092681572874], "hover": "<i>p</i> = %{x}<br>&kappa; = %{y:.2e}"}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2, "x": [2, 3, 4, 5], "y": [7063.911526334362, 36190.67198986197, 126595.10123894019, 363447.51747731434], "hover": "<i>p</i> = %{x}<br>&kappa; = %{y:.2e}"}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2, "x": [2, 3, 4, 5], "y": [23038.29214516074, 132522.67652270565, 398108.58101479715, 1048542.4290089167], "hover": "<i>p</i> = %{x}<br>&kappa; = %{y:.2e}"}], "axisX": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": false, "zeroline": false, "tickmode": "array", "tickvals": [2, 3, 4, 5], "range": [1.6, 5.4], "title": {"text": "<i>p</i>"}}, "axisY": {"showline": true, "linecolor": "#000000", "linewidth": 1, "mirror": "ticks", "ticks": "inside", "tickcolor": "#000000", "ticklen": 5, "tickwidth": 1, "showgrid": true, "zeroline": false, "type": "log", "gridcolor": "#bfbfbf", "griddash": "dash", "gridwidth": 1, "exponentformat": "power", "showexponent": "all", "minor": {"ticks": "inside", "ticklen": 2.5, "tickcolor": "#000000", "showgrid": false}, "range": [2.5360665421010413, 6.320586008775253], "dtick": 1, "title": {"text": "condition number"}}, "labels": [{"text": "<i>h</i> = 0.24", "x": 0.025, "y": 0.975, "paper": true, "anchor": "left", "valign": "top"}], "guides": [{"x": [2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0, 3.125, 3.25, 3.375, 3.5, 3.625, 3.75, 3.875, 4.0, 4.125, 4.25, 4.375, 4.5, 4.625, 4.75, 4.875, 5.0], "y": [43772.755075805406, 55785.28254221105, 70115.48975887678, 87043.90280508478, 106867.07782179055, 129897.60101162278, 156464.08863888352, 186911.18702954805, 221599.57257126487, 260905.9517133558, 305223.060966816, 354959.66690431366, 410540.56616019056, 472406.58543046145, 541014.5814728147, 616837.4411066114, 700364.0812128865, 792099.4487343478, 892564.5206753768, 1002296.3041020277, 1121847.8361420284, 1251788.18398478, 1392702.4448813566, 1545191.746144506, 1709873.2451486487], "text": "\ud835\udcaa(<i>p</i><sup>4</sup>)", "labelX": 2.0, "labelY": 4.641203882152619, "xanchor": "left", "yanchor": "bottom"}, {"x": [2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0, 3.125, 3.25, 3.375, 3.5, 3.625, 3.75, 3.875, 4.0, 4.125, 4.25, 4.375, 4.5, 4.625, 4.75, 4.875, 5.0], "y": [1484.8598737370683, 1676.267591835987, 1879.275777698477, 2093.8844313245377, 2320.093552714169, 2557.9031418673717, 2807.313198784145, 3068.323723464489, 3340.9347159084036, 3625.1461761158894, 3920.9581040869457, 4228.3704998215735, 4547.383363319772, 4877.99669458154, 5220.210493606881, 5574.024760395791, 5939.439494948273, 6316.454697264326, 6705.070367343948, 7105.286505187143, 7517.103110793908, 7940.520184164244, 8375.53772529815, 8822.155734195629, 9280.374210856677], "text": "\ud835\udcaa(<i>p</i><sup>2</sup>)", "labelX": 5.0, "labelY": 3.9675654885500573, "xanchor": "right", "yanchor": "top"}]}}, "options": [{"value": "error", "label": "Error"}, {"value": "cond-h", "label": "Cond-H"}, {"value": "cond-p", "label": "Cond-P"}], "default": "error", "legend": [{"key": "TDG", "label": "Trefftz DG", "color": "#ff4d4d", "fill": "#b83737", "symbol": "circle", "width": 3.2}, {"key": "DG", "label": "DG", "color": "#2f5f9e", "fill": "#224472", "symbol": "square", "width": 2.2}, {"key": "FOSLS", "label": "FOSLS", "color": "#7048e8", "fill": "#5134a7", "symbol": "triangle-up", "width": 2.2}], "guideColor": "#808080", "font": {"family": "Latin Modern Roman, CMU Serif, Latin Modern Math, Georgia, Times New Roman, serif", "size": 14, "color": "#000000"}};
+
+const select = document.getElementById('view-select');
+D.options.forEach((o) => {
+  const el = document.createElement('option');
+  el.value = o.value;
+  el.textContent = o.label;
+  select.appendChild(el);
+});
+select.value = D.default;
+
+const hidden = new Set();              // methods the legend has switched off
+
+function tracesFor(view) {
+  const v = D.views[view];
+  const out = v.traces.map((t) => ({
+    x: t.x, y: t.y, type: 'scatter', mode: 'lines+markers',
+    visible: !hidden.has(t.key),
+    line: {color: t.color, width: t.width},
+    marker: {color: t.fill, symbol: t.symbol, size: 9,
+             line: {color: t.color, width: 1.4}},
+    showlegend: false,
+    hovertemplate: t.hover + '<extra>' + t.label + '</extra>',
+  }));
+  v.guides.forEach((g) => out.push({
+    x: g.x, y: g.y, type: 'scatter', mode: 'lines',
+    line: {color: D.guideColor, width: 1.5, dash: 'dashdot'},
+    showlegend: false, hoverinfo: 'skip',
+  }));
+  return out;
+}
+
+const MARGIN = {l: 68, r: 14, t: 14, b: 46};
+
+function layoutFor(view) {
+  const v = D.views[view];
+  // the degrees of the error view, and the two slopes of Cond-H, are named
+  // where they are drawn: the legend stays the three methods in every view
+  const notes = v.labels.map((a) => ({
+    text: a.text, x: a.x, y: a.y,
+    xref: a.paper ? 'paper' : 'x', yref: a.paper ? 'paper' : 'y',
+    xanchor: a.anchor || 'left', yanchor: a.valign || 'bottom',
+    showarrow: false,
+  }));
+  v.guides.forEach((g) => notes.push({
+    text: g.text, x: g.labelX, y: g.labelY, xref: 'x', yref: 'y',
+    xanchor: g.xanchor, yanchor: g.yanchor, showarrow: false,
+    font: {color: D.guideColor, size: D.font.size - 1},
+  }));
+  return {
+    xaxis: v.axisX, yaxis: v.axisY,
+    annotations: notes,
+    showlegend: false,                 // the html legend under the plot instead
+    margin: MARGIN, font: D.font,
+    modebar: {orientation: 'v'},
+    hovermode: 'closest',
+    plot_bgcolor: '#fff', paper_bgcolor: '#fff',
+  };
+}
+
+const config = {
+  responsive: true, displaylogo: false, scrollZoom: true, displayModeBar: 'hover',
+  modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+};
+
+const plotDiv = document.getElementById('plot');
+function draw() {
+  return Plotly.react(plotDiv, tracesFor(select.value), layoutFor(select.value), config);
+}
+
+function drawLegend() {
+  // the guides are named where they are drawn, so the legend is the three
+  // methods in every view
+  htmlLegend(document.getElementById('legend'), D.legend, (key, on) => {
+    if (on) hidden.delete(key); else hidden.add(key);
+    draw();
+  });
+}
+
+whenSized(plotDiv, () => {
+  Plotly.newPlot(plotDiv, tracesFor(select.value), layoutFor(select.value), config)
+    .then(() => {
+      drawLegend();
+      select.addEventListener('change', () => { draw(); drawLegend(); });
+      autoResize(plotDiv);
+      forwardDeckNav('#plot');
+      followDeckZoom(plotDiv, {
+        'font.size': D.font.size,
+        'margin.l': MARGIN.l, 'margin.r': MARGIN.r,
+        'margin.t': MARGIN.t, 'margin.b': MARGIN.b,
+      });
+    });
+});
+</script>
+</body>
+</html>
