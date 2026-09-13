@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tuning Sound with Liquid Crystals: Finite Element Methods for Nematoacoustics</title>
+<link rel="stylesheet" href="css/style.css">
+
+<!-- MathJax: macros mirror the LaTeX macros of the beamer deck
+     (../CMAM26/commands.tex + main.tex preamble) so slide equations can be
+     pasted over from main.tex with minimal editing. -->
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    macros: {
+      div: "{\\operatorname{div}}",
+      curl: "{\\operatorname{curl}}",
+      grad: "{\\operatorname{grad}}",
+      tr: "{\\operatorname{tr}}",
+      bm: ["{\\boldsymbol{#1}}", 1],
+      vec: ["{\\boldsymbol{#1}}", 1],
+      hessian: "{D^2}",
+      Am: "{\\mathbb{A}}",
+      Idm: "{\\mathbb{I}}",
+      Th: "{\\mathcal{T}_h}",
+      Fh: "{\\mathcal{F}_h}",
+      nHn: ["{\\vec{n}^{\\top} \\hessian #1 \\vec{n}}", 1],
+      dn: "{\\partial_{\\boldsymbol{\\nu}}}",
+      // zero width, the height and depth of the deepest term of the nematic
+      // Helmholtz-Korteweg equation: what keeps its three underbraces level
+      eqdepth: "{\\vphantom{\\beta \\nabla \\cdot \\nabla \\left(\\vec{n}^{\\top} D^2 u \\vec{n}\\right)}}",
+      // stmaryrd's \llbracket/\rrbracket are not in MathJax's base set, so
+      // they are built here the same way \dgavg builds its double braces
+      llbracket: "{\\mathopen{[\\mkern-3.2mu[}}",
+      rrbracket: "{\\mathclose{]\\mkern-3.2mu]}}",
+      dgjump: ["{\\llbracket #1 \\rrbracket}", 1],
+      dgavg: ["{\\{\\!\\!\\{#1\\}\\!\\!\\}}", 1],
+      hdgjump: ["{\\llbracket \\underline{#1} \\rrbracket}", 1],
+      ul: ["{\\underline{#1}}", 1],
+      uh: "{\\underline{u}_h}",
+      uvol: "{u_h}",
+      ufac: "{\\sigma_{F}}",
+      vh: "{\\underline{v}_h}",
+      vvol: "{v_h}",
+      vfac: "{\\mu_{F}}",
+      stab: "{\\eta}",
+      seqh: ["{(#1_h)_{h \\in \\mathcal{H}}}", 1]
+    },
+    packages: {'[+]': ['boldsymbol', 'mathtools']}
+  },
+  loader: {load: ['[tex]/boldsymbol', '[tex]/mathtools']},
+  svg: { fontCache: 'global' },
+  // Formulas can carry reveal fragments of their own (\class{fragment}{...},
+  // see the equation on the nematic Helmholtz-Korteweg slide). Those elements
+  // exist only once MathJax has typeset the page, which is long after
+  // js/slides.js has run, so announce the end of typesetting for it to pick
+  // the fragments up.
+  startup: {
+    pageReady() {
+      return MathJax.startup.defaultPageReady()
+        .then(() => window.dispatchEvent(new Event('mathjax-ready')));
+    }
+  }
+};
+</script>
+<!-- MathJax is vendored (js/mathjax/, see the README there) rather than loaded from
+     a CDN: the deck has to typeset on conference wifi, or none at all. The bundle is
+     tex-svg-full, which carries the boldsymbol and mathtools extensions the config
+     below asks for -- the plain tex-svg build would fetch those over the network. -->
+<script src="js/mathjax/tex-svg-full.js" id="MathJax-script" async></script>
+</head>
+<body>
+
+<div class="deck">
+
+   <!-- ============================================================ -->
+  <!-- 1. TITLE SLIDE                                                -->
+  <!-- ============================================================ -->
+  <section class="slide slide--title">
+    <img src="img/GOE_Logo_NEG.png" alt="University of G&ouml;ttingen" class="title-logo">
+
+    <!-- decorative triangulated mountain ridge, a direct translation of the
+         tikz artwork on the beamer title slide (main.tex) -->
+    <svg class="title-ridge" viewBox="0 0 450 200" aria-hidden="true">
+      <g fill="#294a82">
+        <polygon points="100,200 210,200 110,85"/>
+        <polygon points="110,85 210,200 205,120"/>
+        <polygon points="320,200 450,200 450,95"/>
+      </g>
+      <g stroke="#577dae" fill="none" stroke-width="0.9">
+        <path d="M110,85 L100,200 M110,85 L210,200 M205,120 L210,200
+                 M320,5 L210,200 M320,5 L320,200 M450,95 L320,200"/>
+      </g>
+      <polyline points="0,200 110,85 205,120 320,5 450,95"
+                fill="none" stroke="#577dae" stroke-width="2"/>
+    </svg>
+
+    <div class="title-block">
+      <p class="event">OFAP 2026 &nbsp;&middot;&nbsp; Oltrepò Pavese, Pavia &nbsp;&middot;&nbsp; Sep. 17th, 2026</p>
+      <h1>Tuning Sound with Liquid Crystals: Finite Element Methods for Nematoacoustics </h1>
+      <div class="accent-rule"></div>
+      <p class="authors">Tim van Beeck<sup>1</sup></p>
+      <p class="joint">based on joint work with P.&nbsp;E.&nbsp;Farrell<sup>2,3</sup>, U.&nbsp;Zerbinati<sup>2</sup></p>
+      <p class="affiliation">
+        <sup>1</sup>&nbsp;University of G&ouml;ttingen, Institute for Numerical and Applied Mathematics<br>
+        <sup>2</sup>&nbsp;University of Oxford, Mathematical Institute<br>
+        <sup>3</sup>&nbsp;Charles University, Prague, Faculty of Mathematics and Physics
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 2. SECTION: MOTIVATION                                        -->
+  <!-- ============================================================ -->
+  <!-- Section dividers, one per part of the talk except the conclusion, which
+       needs no announcing. They are numbered 01-05 and, like the title slide,
+       stay outside the frame count (see UNCOUNTED in js/slides.js). -->
+  <section class="slide slide--section">
+    <p class="section-number">01</p>
+    <h2>Motivation</h2>
+  </section>
+
+  <!-- ---- Motivation ------------------------------------------------ -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Tuning sound with liquid crystals</h2>
+    <div class="slide-body">
+      <div class="columns columns--wide-left">
+        <ul>
+          <li><span class="alert">Nematic liquid crystals</span>: ordered fluids whose local average
+            orientation is described by a unit vector $\vec{n} \in \mathbb{R}^d$</li>
+          <!-- each figure in the right column carries the data-step of the
+               bullet it illustrates, so the two come up on the same click
+               (see stepsOf in js/slides.js) -->
+          <li class="fragment" data-step="lcd">external electromagnetic fields control $\vec{n}$
+            <span class="aside">the mechanism behind LCDs: manipulating polarised light waves</span></li>
+          <li class="fragment" data-step="scenes">$\vec{n}$ also interacts with acoustic waves:
+            anisotropy in attenuation and speed of sound, i.e., waves propagate faster along $\vec{n}$
+            <span class="aside">control of the director $\Rightarrow$ control of the propagation</span></li>
+          <li class="fragment"><span class="alert">nematoacoustics</span>
+            <span class="cite">Virga (2009); Selinger et al. (2002)</span></li>
+          <li class="fragment">modelled by the <span class="alert">nematic Helmholtz&ndash;Korteweg equation</span>
+            <span class="cite">Farrell, Zerbinati (2025)</span></li>
+        </ul>
+        <!-- figs/webgui_{isotropic,nematic}.html are exported from
+             code/test.ipynb via export_webgui(); each is a standalone webgui
+             page whose three.js runtime is vendored in js/webgui.js, so they
+             render offline. Kept in an iframe so the viewer's own CSS/JS
+             cannot collide with the deck (slides.js already ignores clicks on
+             iframes, so dragging the scene does not advance the slide). The
+             dropdown swaps the iframe src, see the .view-switcher-select
+             handler in js/slides.js. -->
+        <!-- both figures share one slot: revealing the scenes fades the LCD
+             schematic out again, so each bullet has the right column to
+             itself (see .fig-stack in css/style.css) -->
+        <div class="fig-stack">
+          <figure class="fragment" data-step="lcd">
+            <img src="figs/lcd.png" alt="Schematic of an LCD pixel">
+            <figcaption><a href="https://www.makingsoftware.com/chapters/how-a-screen-works#how-an-lcd-works"
+               target="_blank" rel="noopener">Source: makingsoftware.com</a></figcaption>
+          </figure>
+          <figure class="webgui-figure fragment" data-step="scenes">
+            <iframe src="figs/webgui_isotropic.html" class="webgui-frame"
+                    title="Interactive solution of the nematic Helmholtz&ndash;Korteweg equation"
+                    loading="eager"></iframe>
+            <div class="view-switcher">
+              <label for="motivation-view-select">View</label>
+              <select id="motivation-view-select" class="view-switcher-select">
+                <option value="figs/webgui_isotropic.html">Isotropic (&beta; = 0)</option>
+                <option value="figs/webgui_nematic.html">Nematic (&beta; = 10&#8315;&sup3;)</option>
+              </select>
+            </div>
+            <figcaption class="webgui-hint">
+              $k = 75$, $\alpha = 5 \cdot 10^{-3}$
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Interactive: the nematic drum ------------------------------ -->
+  <!-- figs/nematic-drum.html is generated by code/make_drum_widget.py, which
+       bundles the solver, the renderer and the synthesiser of the app in
+       nematicDrum/ into one self-contained page. The slide carries the same
+       header as every other one and the widget fills what is left. -->
+  <section class="slide slide--widget">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Nematic drum</h2>
+    <iframe src="figs/nematic-drum.html" class="slide-iframe slide-iframe--full"
+            title="Interactive nematic drum: turn the director and hear the modes retune"
+            loading="eager"></iframe>
+    <!-- the same widget, hosted, so the audience can open it on their phones.
+         figs/drum-qr.png is generated by code/make_qr.py (code, portrait and
+         decode check in one), and lives in the repo so the deck still shows it
+         offline. Sits under the widget's controls, in the same column, see
+         .slide-qr in css/style.css. -->
+    <a class="slide-qr" href="https://www.uzerbinati.eu/drum/#p=star&amp;a=0.1&amp;b=0.087&amp;n=53"
+       target="_blank" rel="noopener">
+      <img src="figs/drum-qr.png" alt="QR code linking to the interactive nematic drum">
+      <span>play with it yourself</span>
+    </a>
+  </section>
+
+  <!-- ---- Appetiser -------------------------------------------------
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Appetiser</h2>
+    <div class="slide-body">
+      <div class="fig-row">
+        <figure>
+          <img src="figs/waveguide_k75_beta0.0_new200326.png" alt="Waveguide, isotropic case">
+        </figure>
+        <figure class="fragment">
+          <img src="figs/waveguide_k75_beta0.001_new200326.png" alt="Waveguide, nematic case">
+        </figure>
+      </div>
+    </div>
+  </section> -->
+
+  <!-- ---- Appetiser II ----------------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Motivation</p>
+    <h2 class="slide-title">Acoustic devices</h2>
+    <div class="slide-body">
+      <!-- figs/webgui_{resonator,non_resonator}.html are exported from
+           code/resonator.ipynb via export_webgui(), same as the scenes on the
+           motivation and scattering slides; all of them share the vendored
+           js/webgui.js runtime. The two differ only in the director: (1,0)
+           sits on the resonance of the cavity, (0,1) does not. Both animate
+           the phase on their own. They replace the stills figs/resonator.png
+           and figs/non-resonator.png, which are still in the repo. -->
+      <div class="fig-row">
+        <figure class="webgui-figure">
+          <iframe src="figs/webgui_resonator.html" class="webgui-frame"
+                  title="Resonator: the field stays trapped in the slit ring"
+                  loading="eager"></iframe>
+          <figcaption>resonator, $\bm{n} = (1,0)$</figcaption>
+        </figure>
+        <figure class="webgui-figure fragment">
+          <iframe src="figs/webgui_non_resonator.html" class="webgui-frame"
+                  title="Non-resonator: the field radiates into the domain"
+                  loading="eager"></iframe>
+          <figcaption>non-resonator, $\bm{n} = (0,1)$</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- 3. SECTION: MODELLING                                          -->
+  <!-- ============================================================ -->
+  <!-- The divider between the motivation and the modelling: the applications
+       slide is the last thing the audience is shown before the derivation
+       starts, so the talk says out loud that it is changing gear. -->
+  <section class="slide slide--section">
+    <p class="section-number">02</p>
+    <h2>Modelling</h2>
+  </section>
+
+  <!-- ---- balance laws -> a wave equation in terms of the stress ------ -->
+  <!-- The modelling section follows the chain
+         balance laws -> generalised wave equation -> constitutive law -> PDE,
+       so that the fourth-order operator of the deck is not postulated but
+       arrives as the consequence of one choice: which Cauchy stress the
+       nematic is given. -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Modelling</p>
+    <h2 class="slide-title">Generalised wave equation</h2>
+    <div class="slide-body">
+      <ul>
+        <li><span class="alert">Conservation of mass</span> and <span class="alert">balance of linear
+          momentum</span> without body forces, with $\vec{v}$ the velocity and $\bm{\sigma}$ the
+          Cauchy stress:
+          \[ \partial_t \rho + \div(\rho \vec{v}) = 0, \qquad
+             \rho \left[ \partial_t \vec{v} + (\nabla \vec{v}) \vec{v} \right] = \div \, \bm{\sigma}. \]</li>
+        <li class="fragment">Assume small time-harmonic condensation of a rest state $\rho_0$:
+          \[ \rho = \rho_0 (1 + U) \text{ with } U(\vec{x},t) = \Re \left( u(\vec{x}) e^{-i \omega t} \right),
+          \quad \vert u \vert = \mathcal{O}(\varepsilon), \quad \Vert \vec{v} \Vert = \mathcal{O}(\varepsilon), \varepsilon \ll 1. \] </li>
+        <li class="fragment">Dropping $\mathcal{O}(\varepsilon^2)$ terms and eliminating $\vec{v}$ by
+          differentiating the continuity equation in time:</li>
+      </ul>
+      <!-- an empty .box-title renders as a plain framed box, cf. .box CSS -->
+      <div class="box fragment">
+        <div class="box-title"></div>
+        <div class="box-body">
+          \[ \rho_0 \partial_t^2 U + \div (\div \, \bm{\sigma}) = 0
+             \qquad \Longrightarrow \qquad
+             - \rho_0 \omega^2 u + \div (\div \, \bm{\Sigma}) = 0, \]
+          <p class="text-soft">with $\bm{\Sigma}$ the amplitude of the linearised stress,
+             $\bm{\sigma} = \Re \left( \bm{\Sigma} e^{-i \omega t} \right)$.</p>
+        </div>
+      </div>
+      <p class="aside fragment">the same wave equation for every fluid; what changes is the
+         <span class="alert">constitutive law for $\bm{\sigma}$</span>.</p>
+    </div>
+  </section>
+
+  <!-- ---- which stress tensor? ---------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Modelling</p>
+    <h2 class="slide-title">Which elastic response?</h2>
+    <div class="slide-body">
+      <ul>
+        <li>the Cauchy stress $\bm{\sigma}$ encodes the elastic response of the fluid
+          to a deformation</li>
+      </ul>
+      <div class="columns columns--wide-left">
+        <!-- the four blocks share one slot, one per click (see .box-stack in
+             css/style.css): each constitutive law is read on its own, and the
+             comparison happens in time rather than across a crowded slide -->
+        <div class="box-stack">
+          <div class="box fragment" data-step="spherical">
+            <div class="box-title">Spherical response</div>
+            <div class="box-body">
+              <p>The isotropic phase of a compressible fluid:</p>
+              \[ \bm{\sigma}^{(I)} = - p \, \Idm, \qquad p = \rho c_0^2 . \]
+              <p class="aside">the <span class="hl">Helmholtz equation</span></p>
+              \[ - \Delta u - k^2 u = 0, \qquad k = \omega / c_0 . \]
+            </div>
+          </div>
+
+
+          <div class="box fragment" data-step="virga">
+            <div class="box-title">Nematic&ndash;Korteweg response
+              <span class="cite">Virga, 2009</span></div>
+            <div class="box-body">
+              <p>Virga proposed a hyperelastic stress, derived from the free energy
+                 $W(\rho, \nabla \rho, \vec{n}) = c_0^2 \rho
+                  + \tfrac{1}{2} \alpha \Vert \nabla \rho \Vert^2
+                  + \tfrac{1}{2} \beta (\nabla \rho \cdot \vec{n})^2$ (for $\bm{n}$ fixed):</p>
+              \[ \bm{\sigma}^{(V)} = - p \, \Idm
+                 - \alpha \rho \, (\nabla \rho \otimes \nabla \rho)
+                 - \beta \rho \, (\nabla \rho \cdot \vec{n}) \, \nabla \rho \otimes \vec{n}, \]
+              \[ p = \rho c_0^2 - \rho \, \div \left( \rho \left(
+                 \alpha \nabla \rho + \beta (\nabla \rho \cdot \vec{n}) \vec{n} \right) \right) . \]
+              <p class="aside">$\beta = 0$: the <span class="hl">Korteweg</span>
+                 stress of capillary fluids, depends on the density gradient.</p>
+            </div>
+          </div>
+
+          <!-- the last box is read like the first one: what is assumed, the
+               pressure it leaves, and the equation that comes out of it on its
+               own display line -- the derivation is spoken, not printed -->
+          <div class="box fragment" data-step="linearised">
+            <div class="box-title">Nematic&ndash;Korteweg response</div>
+            <div class="box-body">
+              <p>Small perturbation and linearisation:</p>
+              \[ \bm{\sigma} \approx - p' \, \Idm, \qquad
+                 p' = \rho_0 c_0^2 s - \rho_0^3 \left( \alpha \Delta s + \beta \, \nHn{s} \right) . \]
+              <p class="aside">the <span class="hl">nematic Helmholtz&ndash;Korteweg equation</span>
+                 (after rescaling):</p>
+              \[ \alpha \Delta^2 u + \beta \, \nabla \cdot \nabla \left( \nHn{u} \right)
+                 - \Delta u - k^2 u = 0 . \]
+            </div>
+          </div>
+        </div>
+
+        <!-- the portraits of the response on the screen, in the same slot and
+             on the same click as their box (matching data-step). They are
+             cropped to one size by .fig-stack--portraits in css/style.css, so
+             nothing shifts as they change. The nematic-Korteweg stress belongs
+             to both names in its title, so Virga and Korteweg come up side by
+             side and stay for the linearisation, which is still their equation.
+             Korteweg is
+             commons.wikimedia.org/wiki/File:Portret_van_Prof._Diederik_Johannes_Korteweg,_RP-P-1905-521.jpg
+             -- the credit used to be the caption under it. -->
+        <div class="fig-stack fig-stack--portraits">
+          <figure class="fragment" data-step="spherical">
+            <!-- img/Helmholtz_crop.jpg is the head and shoulders of the full
+                 seated painting in img/Helmholtz.jpg, cut to the same 3:4 as
+                 the other two so all three are framed alike -->
+            <img src="img/Helmholtz_crop.jpg" alt="Portrait of Hermann von Helmholtz">
+          </figure>
+          <figure class="fragment fig-pair" data-step="virga">
+            <img src="img/Virga.jpg" alt="Portrait of Epifanio Virga">
+            <img src="img/Korteweg.jpg" alt="Portrait of D. J. Korteweg">
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- boundary conditions ----------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Modelling</p>
+    <h2 class="slide-title">Boundary conditions</h2>
+    <div class="slide-body">
+      <!-- the pressure and the modelling assumption on the left, the picture of
+           that assumption on the right; the conditions below get the full width
+           again, since their columns have to line up across the whole slide -->
+      <div class="columns columns--two-thirds">
+        <div>
+          <div class="box fragment">
+            <div class="box-title"></div>
+            <div class="box-body">
+              <p>Linearised excess pressure from before (after rescaling):</p>
+              \[ p' \coloneqq u - \left( \alpha \Delta u + \beta \, \nHn{u} \right) \]
+            </div>
+          </div>
+          <p class="fragment" data-step="gas"><span class="alert">Model choice:</span> an ideal gas surrounds the domain,
+            \[ p' \overset{!}{=} p \approx u \; \Rightarrow \; \alpha \Delta u + \beta \, \nHn{u} = 0 \]</p>
+        </div>
+
+        <!-- What the model choice says, drawn: one point of the boundary, the
+             excess pressure of the fluid pushing at it from inside and the
+             pressure of the gas from outside. They have to agree there, which
+             is the whole content of the condition beside it. Comes up with the
+             paragraph it illustrates (same data-step). -->
+        <figure class="fragment" data-step="gas">
+          <svg class="sketch-svg" viewBox="-130 -110 260 235" style="max-height:36vh" aria-hidden="true">
+            <!-- the fluid: everything inside the arc -->
+            <path d="M -110,43 A 200,200 0 0 1 110,43 L 110,120 L -110,120 Z"
+                  fill="#cfd3d7" fill-opacity="0.5"/>
+            <path d="M -110,43 A 200,200 0 0 1 110,43" fill="none"
+                  stroke="#235f96" stroke-width="5"/>
+            <!-- the point the two pressures are compared at -->
+            <circle cx="0" cy="10" r="5" fill="#14181c"/>
+            <!-- from the outside (the gas) and from the inside (the fluid),
+                 each pushing at that point: two paths, because marker-end marks
+                 the end of a whole path -->
+            <path d="M 0,-62 L 0,-4" stroke="#14181c" stroke-width="2.5"
+                  marker-end="url(#arrowhead-bc)"/>
+            <path d="M 0,86 L 0,26" stroke="#14181c" stroke-width="2.5"
+                  marker-end="url(#arrowhead-bc)"/>
+            <foreignObject class="sketch-label" x="-40" y="-100" width="80" height="34">
+              <div xmlns="http://www.w3.org/1999/xhtml" style="color:#14181c">$p$</div>
+            </foreignObject>
+            <foreignObject class="sketch-label" x="-40" y="88" width="80" height="34">
+              <div xmlns="http://www.w3.org/1999/xhtml" style="color:#14181c">$p'$</div>
+            </foreignObject>
+            <foreignObject class="sketch-label" x="-128" y="-92" width="120" height="34">
+              <div xmlns="http://www.w3.org/1999/xhtml" style="color:#6a747e;font-size:15px">ideal gas</div>
+            </foreignObject>
+            <foreignObject class="sketch-label" x="-124" y="74" width="80" height="34">
+              <div xmlns="http://www.w3.org/1999/xhtml" style="color:#14181c">$\Omega$</div>
+            </foreignObject>
+            <!-- sits just outside the boundary near its right end, where
+                 nothing else is: centred inside the viewBox so the formula is
+                 not clipped at the edge -->
+            <foreignObject class="sketch-label" x="45" y="-17" width="80" height="34">
+              <div xmlns="http://www.w3.org/1999/xhtml" style="color:#235f96">$\partial \Omega$</div>
+            </foreignObject>
+            <defs>
+              <marker id="arrowhead-bc" viewBox="0 0 10 10" refX="9" refY="5"
+                      markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#14181c"/>
+              </marker>
+            </defs>
+          </svg>
+        </figure>
+      </div>
+
+      <!-- The three conditions as a table without rules: what it is called, what
+           it says physically, and what it puts on the boundary. The math is
+           inline rather than displayed, which is where the vertical space comes
+           from, and the condition on $p'$, the implication arrow and what it
+           leaves on the boundary are three separate cells, so the three
+           resulting conditions line up under one another. The cells of a row
+           carry the same data-step, so a click still brings up one condition at
+           a time (see stepsOf in js/slides.js). -->
+      <div class="rule-free-table">
+        <div class="fragment" data-step="soft"><span class="alert">Sound soft</span></div>
+        <div class="fragment" data-step="soft">excess pressure vanishes</div>
+        <div class="fragment" data-step="soft">$p' = 0$</div>
+        <div class="fragment" data-step="soft">$\Rightarrow$</div>
+        <div class="fragment" data-step="soft">$u = 0$</div>
+
+        <div class="fragment" data-step="hard"><span class="alert">Sound hard</span></div>
+        <div class="fragment" data-step="hard">normal velocity vanishes</div>
+        <div class="fragment" data-step="hard">$\dn p' = 0$</div>
+        <div class="fragment" data-step="hard">$\Rightarrow$</div>
+        <div class="fragment" data-step="hard">$\dn \left( u - \left( \alpha \Delta u + \beta \, \nHn{u} \right) \right) = 0$</div>
+
+        <div class="fragment" data-step="imp"><span class="alert">Impedance</span></div>
+        <div class="fragment" data-step="imp">absorbing boundary</div>
+        <div class="fragment" data-step="imp">$\dn p' = i \theta p'$</div>
+        <div class="fragment" data-step="imp">$\Rightarrow$</div>
+        <div class="fragment" data-step="imp">$\dn \left( u - \left( \alpha \Delta u + \beta \, \nHn{u} \right) \right) = i \theta u$</div>
+
+        <p class="aside fragment table-note" data-step="imp">with $\theta$ the impedance of the boundary</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- The nematic Helmholtz-Korteweg equation --------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Modelling</p>
+    <h2 class="slide-title">The nematic Helmholtz&ndash;Korteweg equation</h2>
+    <div class="slide-body">
+      <p>Find $u : \Omega \subset \mathbb{R}^d \to \mathbb{C}$, $d = 2,3$, such that</p>
+      <!-- the equation keeps the slide centre, the assumptions sit beside it,
+           and the devious emoji hangs under the anisotropy brace -- the term
+           the whole talk is about (see .eq-row in css/style.css) -->
+      <div class="eq-row">
+        <div class="eq-block">
+          <!-- the three braces come up one per click: each term is printed
+               with \mathrlap (zero width) and the brace below it is an
+               \underbrace of a \phantom of the same term, so the equation is
+               typeset exactly as it would be without the fragments -- the
+               phantom reserves the identical box -- and only the brace and its
+               label fade in. \eqdepth (a macro in the MathJax config) is a
+               zero-width \vphantom of the deepest of the three terms, put in
+               every brace so all three hang at the same height: an underbrace
+               sits below the depth of what it spans, and the three terms do not
+               have the same depth. \class puts the deck's .fragment class on the
+               <g> MathJax emits, which the reveal machinery in js/slides.js
+               picks up like any other fragment. The braces come up
+               Helmholtz -> biharmonic -> anisotropy rather than left to right,
+               which is what the order-N classes are for: the source order here
+               is fixed by the way the equation is typeset. -->
+          \[
+            \mathrlap{\alpha \Delta^2 u}
+            \class{fragment order-2}{\underbrace{\phantom{\alpha \Delta^2 u}\eqdepth}_{\text{biharmonic}}}
+            + \mathrlap{\beta \nabla \cdot \nabla \left(\nHn{u}\right)}
+            \class{fragment brace-aniso order-3}{\underbrace{\phantom{\beta \nabla \cdot \nabla \left(\nHn{u}\right)}\eqdepth}_{\text{anisotropy}}}
+            \mathrlap{- \Delta u - k^2 u}
+            \class{fragment order-1}{\underbrace{\phantom{- \Delta u - k^2 u}\eqdepth}_{\text{Helmholtz}}} = f \quad \text{in } \Omega,
+          \]
+          <img src="figs/devious.png" alt="" class="eq-badge">
+        </div>
+        <p class="eq-note text-soft">
+          with $\alpha &gt; 0$, $\beta &gt; - \alpha$, and $\vec{n} \in \mathbb{R}^d$ constant, $\vert \vec{n} \vert = 1$.
+        </p>
+      </div>
+      <!-- the same operator in the compact form the analysis is written in;
+           $\Am$ is the tensor introduced on the boundary-condition slide -->
+      <p class="eq-compact fragment text-soft">
+        or compactly, $\mathcal{L} u \coloneqq \Delta \left( \Am : \hessian u \right) - \Delta u - k^2 u = f$
+        with $\Am = \alpha \Idm + \beta \, \vec{n} \otimes \vec{n}$.
+      </p>
+      <div class="box fragment">
+        <div class="box-title">Weak formulation</div>
+        <div class="box-body">
+          <p>Given $f \in L^2(\Omega)$, find $u \in V \coloneqq \{ v \in H^2(\Omega) : {\color{gray}{\dn}} v = 0 \text{ on } \partial \Omega \}$ such that</p>
+          \[ \begin{aligned}
+            a(u,v) &amp;\coloneqq \alpha (\Delta u, \Delta v)_{\Omega} + \beta (\nHn{u},\Delta v)_{\Omega}
+              + (\nabla u, \nabla v)_{\Omega} - k^2(u,v)_{\Omega}
+              \mathbin{\color{gray}{-}} {\color{gray}{i \theta (u,v)_{\Gamma_R}}} \\
+            &\ = (f,v)_{\Omega} \qquad \text{ for all } v \in V.
+          \end{aligned} \]
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 4. SECTION: WELL-POSEDNESS                                    -->
+  <!-- ============================================================ -->
+  <section class="slide slide--section">
+    <p class="section-number">03</p>
+    <h2>Well-posedness</h2>
+  </section>
+
+  <!-- ---- Tools -------------------------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Well-posedness</p>
+    <h2 class="slide-title">Tools</h2>
+    <div class="slide-body">
+      <div class="box">
+        <div class="box-title">G&aring;rding inequality</div>
+        <div class="box-body">
+          <p>Let $V,W$ be Hilbert with $V \hookrightarrow W$ compact. If there exist constants
+             $C_V,C_W$ such that</p>
+          \[ \Re a(u,u) \ge C_V \Vert u \Vert^2_{V} - C_{W} \Vert u \Vert^2_{W} \qquad \forall u \in V, \]
+          <p>then the associated operator is <span class="alert">Fredholm with index zero</span>, i.e.
+             well-posedness is equivalent to uniqueness of solutions.</p>
+        </div>
+      </div>
+      <ul> 
+        <li class="fragment">index zero: $\dim \ker A = \dim (V / \text{range } A)$</li>
+        <li class="fragment">useful for proving stability at the discrete level as well</li>
+      </ul>
+      <div class="box fragment">
+        <div class="box-title">Miranda&ndash;Talenti like estimate</div>
+        <div class="box-body">
+          <p>If $\Omega$ is convex, or $d = 2$ and $\Omega$ is polygonal, then</p>
+          \[ \Vert \hessian u \Vert_{\Omega} \le \Vert \Delta u \Vert_{\Omega}
+             \qquad \forall u \in \{ v \in H^2(\Omega) : {\color{gray}{\dn}} v = 0 \text{ on } \partial \Omega \}. \]
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Perturbation argument ---------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Well-posedness</p>
+    <h2 class="slide-title">Perturbation argument</h2>
+    <div class="slide-body">
+      <div class="box fragment">
+        <div class="box-title">Well-posedness of the isotropic case</div>
+        <div class="box-body">
+          <p>The problem is well-posed for $\beta = 0$.</p>
+        </div>
+      </div>
+      <div class="sketch fragment">
+        <ul>
+          <li> G&aring;rding + uniqueness (similar to Helmholtz)
+            \[ \Re a(u,u) = \alpha \Vert \Delta u \Vert^2_{\Omega} + \Vert \nabla u \Vert_{\Omega}
+               - k^2 \Vert u \Vert^2_{\Omega} \ge \min\{\alpha,1\} \Vert u \Vert^2_{V}
+               - (k^2 + 1)\Vert u \Vert^2_{\Omega}. \]</li>
+          <li> or <span class="alert">T-coercivity</span>: flip sign in front of 'problematic' eigenfunctions of $\alpha \Delta^2 - \Delta$</li>
+        </ul>
+      </div>
+      <div class="box fragment">
+        <div class="box-title">Perturbation argument</div>
+        <div class="box-body">
+          <p>If $\vert \beta \vert &lt; C_{\beta = 0}$, then the weak formulation is well-posed.</p>
+        </div>
+      </div>
+      <div class="sketch fragment"> Estimate the anisotropic term:
+            \[ \vert \beta (\nHn{u},\Delta u)_{\Omega} \vert \le \vert \beta \vert
+               \Vert \hessian u \Vert_{\Omega} \Vert \Delta u \Vert_{\Omega} \le \vert \beta \vert
+                \Vert \Delta u \Vert_{\Omega}^2 \]
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Reformulation ------------------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Well-posedness</p>
+    <h2 class="slide-title">Is this optimal?</h2>
+    <div class="slide-body">
+      <ul>
+        <li>$C_{\beta = 0}$ depends on the stability constant of the isotropic problem
+          <ul><li class="arrow-item">Blow-up around resonant wave-numbers forces $\beta \to 0$</li></ul>
+        </li>
+      </ul>
+
+      <!-- the error against the wavenumber and the field the resonances come
+           from, side by side: the spikes of the left figure are the wells of
+           the right one. The order-N classes step them around the question
+           between them -- plot, question, plot -- which is not the order the
+           markup can be written in (see reorder() in js/slides.js).
+           figs/EVBlowUp.html is generated by code/make_evblowup_plot.py from
+           data/EVBlowUp.csv, figs/pseudospectrum.svg by
+           code/make_pseudo_plot.py from data/Pseudo/pseudo_ARG5_a0.01_b0.1_
+           n0.707...-0.707..._ref0_zoom.csv and the eigenvalue file beside it
+           (beta = 0.1 only; the file to read is a constant in that script).
+           The first is a standalone plotly page using the vendored
+           js/plotly.min.js, which follows the deck's zoom control through the
+           postMessage broadcast in js/slides.js; the second is a still figure,
+           since a field and seven points have nothing to interact with. -->
+      <div class="columns columns--figures">
+        <figure class="fragment order-1">
+          <iframe src="figs/EVBlowUp.html" class="slide-iframe"
+                  title="H2 error against wavenumber, blowing up at resonances"
+                  loading="eager"></iframe>
+          <figcaption>error against $k$, at three $\beta$</figcaption>
+        </figure>
+        <figure class="fragment order-3">
+          <img src="figs/pseudospectrum.svg"
+               alt="Smallest singular value over the complex k squared plane, with wells at the eigenvalues">
+          <figcaption>$\sigma$ in the complex $k^2$-plane at $\beta = 10^{-1}$,
+            marks at the eigenvalues</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+   <!-- ---- Overview of the well-posedness results ---------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Well-posedness</p>
+    <h2 class="slide-title">Improvements</h2>
+    <div class="slide-body">
+      <!-- Summary diagram (was figs/Diag.png), read left to right: the
+           sesquilinear form on the left, the three boundary conditions in the
+           middle column, the two results on the right.
+           Same recipe as the domain sketch above -- one inline SVG whose text
+           sits in foreignObjects, so every label is an ordinary HTML text box
+           typeset by MathJax and scales with the viewBox (CSS px inside a
+           foreignObject are svg user units).
+           The whole diagram arrives on one click: every fragment shares the
+           same data-step, so the deck reveals them as a single step.
+           The node boxes are <button>s: they trace one branch of the diagram
+           on hover (click to pin it), and being buttons they are also the one
+           thing the deck's click-to-advance handler leaves alone, so tracing
+           a branch does not step the slide. Geometry lives in the x/y/width/
+           height attributes below, all in the 1290 x 600 viewBox: the three
+           columns start at x = 10, 556 and 1010. -->
+      <figure class="fig-diagram">
+        <svg class="diag" viewBox="0 0 1290 600" role="img" aria-labelledby="diag-title">
+          <title id="diag-title">The sesquilinear form leads to the sound-soft, sound-hard and
+            impedance problems; sound-soft and sound-hard give a bounded isomorphism,
+            impedance gives a Fredholm operator with index zero.</title>
+          <defs>
+            <marker id="diag-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z"/>
+            </marker>
+            <!-- same head in the accent colour, for the branch being traced;
+                 a marker cannot inherit the stroke of the path that uses it -->
+            <marker id="diag-arrow-hl" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z"/>
+            </marker>
+          </defs>
+
+          <!-- Which tool proves which branch, in the corner the diagram leaves
+               empty. It is a legend rather than a node -- nothing flows in or
+               out of it -- so it keeps the plain panel of the form box; what it
+               does share is the tracing, each entry carrying the data-chain of
+               the branches it belongs to (see trace() in js/slides.js). The
+               Cordes condition does both of the first two branches, reversed
+               for sound soft and as it stands for sound hard, so the "Cordes"
+               and the "(reversed)" are tagged separately and sit side by side
+               rather than nested: fading is opacity, and nested chains would
+               multiply it into something far fainter than the rest.
+               The mixed formulation is what the impedance branch needs. -->
+          <g class="diag-node diag-node--tools fragment" data-step="diagram">
+            <rect x="10" y="10" width="340" height="150" rx="24"/>
+            <foreignObject x="10" y="10" width="340" height="150">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-tools">
+                <div class="diag-tools-title">Tools</div>
+                <div class="diag-tools-line"><span class="diag-tool" data-chain="soft hard">Cordes</span>
+                  <span class="diag-tool" data-chain="soft">(reversed)</span></div>
+                <div class="diag-tools-line"><span class="diag-tool" data-chain="imp">Mixed</span></div>
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- the form itself: on the slide from the start, never traced away -->
+          <g class="diag-node diag-node--form">
+            <rect x="10" y="220" width="470" height="180" rx="30"/>
+            <foreignObject x="10" y="220" width="470" height="180">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--formula">
+                <div>
+                  \[ \begin{aligned}
+                    (\mathcal{A}u,v)_{V} &amp;\coloneqq \alpha (\Delta u, \Delta v)_{\Omega} \\
+                    &amp;\quad + \beta (\nHn{u},\Delta v)_{\Omega} \\
+                    &amp;\quad + (\nabla u, \nabla v)_{\Omega} - k^2 (u,v)_{\Omega}
+                  \end{aligned} \]
+                </div>
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- the three boundary conditions -->
+          <g class="fragment" data-step="diagram" data-chain="soft">
+            <path class="diag-edge" d="M 484 288 C 520 212 512 128 550 94"/>
+          </g>
+          <g class="fragment" data-step="diagram" data-chain="hard">
+            <path class="diag-edge" d="M 484 312 L 550 320"/>
+          </g>
+          <g class="fragment" data-step="diagram" data-chain="imp">
+            <path class="diag-edge" d="M 484 336 C 520 414 512 482 550 514"/>
+          </g>
+          <g class="diag-node fragment" data-step="diagram" data-chain="soft">
+            <rect x="556" y="40" width="254" height="92" rx="30"/>
+            <foreignObject x="556" y="40" width="254" height="92">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="soft"><span>sound soft</span></button>
+            </foreignObject>
+          </g>
+          <g class="diag-node fragment" data-step="diagram" data-chain="hard">
+            <rect x="556" y="274" width="254" height="92" rx="30"/>
+            <foreignObject x="556" y="274" width="254" height="92">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="hard"><span>sound hard</span></button>
+            </foreignObject>
+          </g>
+          <g class="diag-node fragment" data-step="diagram" data-chain="imp">
+            <rect x="556" y="474" width="254" height="92" rx="30"/>
+            <foreignObject x="556" y="474" width="254" height="92">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="imp"><span>impedance</span></button>
+            </foreignObject>
+          </g>
+
+          <!-- sound soft is an isomorphism for every parameter set -->
+          <g class="fragment" data-step="diagram" data-chain="soft iso">
+            <path class="diag-edge" d="M 814 92 C 890 106 940 190 998 248"/>
+            <foreignObject class="diag-label" x="838" y="6" width="215" height="86">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--label diag-text--start">
+                <div>$\beta &gt; - \alpha$,<br/>non-resonant $k^2$</div>
+              </div>
+            </foreignObject>
+          </g>
+          <g class="diag-node fragment" data-step="diagram" data-chain="soft hard imp iso">
+            <rect x="1010" y="230" width="270" height="104" rx="30"/>
+            <foreignObject x="1010" y="230" width="270" height="104">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="iso"><span>bounded isomorph.</span></button>
+            </foreignObject>
+          </g>
+
+          <!-- sound hard, under a lower bound on beta -->
+          <g class="fragment" data-step="diagram" data-chain="hard iso">
+            <path class="diag-edge" d="M 814 318 C 890 314 940 292 1004 284"/>
+            <foreignObject class="diag-label" x="830" y="340" width="210" height="100">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--label">
+                <div>$\beta > - \alpha$ (2D),<br/>$\beta \in (-\alpha,3\alpha)$ (3D)<br/>non-resonant $k^2$</div>
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- impedance is Fredholm of index zero -->
+          <g class="fragment" data-step="diagram" data-chain="imp fred">
+            <path class="diag-edge" d="M 814 540 C 890 546 940 534 1004 528"/>
+            <foreignObject class="diag-label" x="850" y="550" width="180" height="48">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--label diag-text--start">
+                <div>$\beta > - \alpha$</div>
+              </div>
+            </foreignObject>
+          </g>
+          <g class="diag-node fragment" data-step="diagram" data-chain="imp fred">
+            <rect x="1010" y="480" width="270" height="104" rx="30"/>
+            <foreignObject x="1010" y="480" width="270" height="104">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="fred"><span>Fredholm w. index $0$</span></button>
+            </foreignObject>
+          </g>
+
+          <!-- and an isomorphism once beta is small enough. This one takes
+               the long way round, in from below, so that it crosses nothing
+               on its way. -->
+          <g class="fragment" data-step="diagram" data-chain="imp iso">
+            <path class="diag-edge" d="M 826 506 C 960 494 1092 480 1096 342"/>
+            <foreignObject class="diag-label" x="1105" y="348" width="175" height="52">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--label">
+                <div>$\vert \beta \vert &lt; C_{\beta = 0}$</div>
+              </div>
+            </foreignObject>
+          </g>
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ---- The Cordes condition ------------------------------------------ -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Well-posedness</p>
+    <h2 class="slide-title">The Cordes condition</h2>
+    <div class="slide-body">
+      <!-- What the condition is stated for and what it buys, in one box: the
+           rewriting in non-divergence form (its own slide until the two were
+           merged) and, on the next click, the pointwise estimate the rewriting
+           is what makes available. The theorem below is the point of both, so
+           it keeps a box of its own. -->
+      <div class="box">
+        <div class="box-title"></div>
+        <div class="box-body">
+          <p>With $\Am \coloneqq \alpha \Idm + \beta\, \vec{n} \otimes \vec{n} \in \mathbb{R}^{d \times d}$,
+             we rewrite (similar to non-divergence form PDEs
+             <span class="cite">Smears, S&uuml;li (2013)</span>)</p>
+          \[ (\alpha \Delta u + \beta \nHn{u},\Delta v)_{\Omega} = (\Am : \hessian u, \Delta v)_{L^2},
+             \qquad \Am : \mathbb{B} = \tr(\Am^\top \mathbb{B}) \]
+          <p class="fragment" data-step="estimate">Pointwise estimate: for any $\gamma &gt; 0$</p>
+          <div class="fragment" data-step="estimate">
+            \[ \Vert \gamma \Am : \hessian u - \Delta u \Vert^2_{\Omega}
+               \le \vert \gamma \Am - \Idm \vert^2_{F} \Vert \hessian u \Vert^2_{\Omega} \]
+          </div>
+        </div>
+      </div>
+      <div class="box fragment">
+        <div class="box-title">Theorem (G&aring;rding inequality, sound soft case)</div>
+        <div class="box-body">
+          <p>If $\vert \gamma \Am - \Idm \vert_{F} &lt; 1$,
+             $\gamma \coloneqq \tr(\Am) / \vert \Am \vert^2_{F}$, then there exist constants
+             $C_V,C_{L^2}$ such that</p>
+          \[ \Re a(u,u) \ge C_V \Vert u \Vert^2_{V} - C_{L^2} \Vert u \Vert^2_{\Omega},
+             \qquad \forall u \in V. \]
+        </div>
+      </div>
+      <div class="sketch fragment">
+        <p>Use the assumption $\vert \gamma \Am - \Idm \vert_{F} &lt; 1$ by estimating</p>
+        \[ \begin{aligned}
+          \left\vert (\gamma \Am : \hessian u - \Delta u, \Delta u)_{\Omega} \right\vert
+            &\le \vert \gamma \Am - \Idm \vert_{F}
+              \Vert \hessian u \Vert_{\Omega} \Vert \Delta u \Vert_{\Omega} \le \vert \gamma \Am - \Idm \vert_{F} \Vert \Delta u \Vert^2_{\Omega}
+        \end{aligned} \]
+        <p>and</p>
+        \[ \Re (\Am : \hessian u, \Delta u) = \gamma^{-1} \Vert \Delta u \Vert^2_{\Omega} + \gamma^{-1} \Re (\gamma \Am : \hessian u - \Delta u, \Delta u)_{\Omega}
+        \ge \gamma^{-1}
+           \left( 1 - \vert \gamma \Am - \Idm \vert_{F} \right)
+           \Vert \Delta u \Vert^2_{\Omega}. \]
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Smallness assumption ------------------------------------------ -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Well-posedness</p>
+    <h2 class="slide-title">Smallness assumption</h2>
+    <div class="slide-body">
+      <!-- The parameter ranges the Cordes condition itself gives, and the wider
+           ones the reversed argument buys, answer the same question, so the
+           reversed condition (its own slide until the two were merged) sits
+           here as a box below the ranges it improves on, with its theorem in
+           a box of its own after it. -->
+      <p>The Cordes condition $\vert \gamma \Am - \Idm \vert_{F} < 1$ is satisfied if</p>
+      <ul>
+            <li class="fragment">$d = 2$: $\beta \in (-\alpha,\infty)$</li>
+            <li class="fragment">$d = 3$: $\beta \in (-\alpha, 3\alpha)$</li>
+      </ul>
+      <div class="box fragment" data-step="reversed">
+        <div class="box-title">Reversed Cordes condition: for $\Am$ constant, run the argument in reverse</div>
+        <div class="box-body">
+          <ul>
+            <!-- shares the box's own step, so the box never appears empty -->
+            <li class="fragment" data-step="reversed">
+              Alternative norm on $V$: $\quad C_1 \Vert u \Vert_{H^2} \le \Vert \Am:\hessian u \Vert_{L^2} + \Vert u \Vert_{H^1} \le C_2 \Vert u \Vert_{H^2}$</li>
+            <li class="fragment">$S \coloneqq \Am^{1/2}$ is an affine mapping, transformation rule applicable</li>
+            <li class="fragment">Estimate $(\Am:\hessian u,\Delta u) \ge \frac{1}{\tilde{\gamma}} (1 - \vert \tilde{\gamma} \Am^{-1} - \Idm \vert_{F}) \Vert \Am : \hessian u \Vert_{L^2}^2$</li>
+            <li class="fragment">Smallness condition on $\Am^{-1}$, satisfied if $\beta > - 3\alpha/4$ and $\alpha + \beta > 0$ (in $d = 3$)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="box fragment">
+        <div class="box-title">Theorem (Well-posedness)</div>
+        <div class="box-body">
+          <p>Let $\Omega$ be bounded convex or $\Omega \subset \mathbb{R}^2$ polygonal and let $k^2 \not \in \mathcal{K}_{\text{res}}$. Then, there exists a unique weak solution of the nematic Helmholtz&ndash;Korteweg equation (sound-soft case).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 5. SECTION: DISCRETISATION                                    -->
+  <!-- ============================================================ -->
+  <section class="slide slide--section">
+    <p class="section-number">04</p>
+    <h2>Discretisation</h2>
+  </section>
+
+  <!-- ---- Two routes to a discretisation ---------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">Two routes to a discretisation</h2>
+    <div class="slide-body">
+      <!-- The fork the rest of the section walks down: the same $H^2$ problem
+           either keeps $V_h \subset V$ (and pays for it in the element) or
+           gives that up (and pays for it in the analysis). Same recipe as the
+           well-posedness summary diagram: one inline SVG in the shared 1290 x
+           600 viewBox, every label an HTML text box in a foreignObject so
+           MathJax typesets it and it scales with the box. The two branches are
+           their own reveal steps (data-step="conf" / "nonconf"), so the choice
+           is put on the slide one arm at a time; the node boxes are <button>s
+           and trace their branch on hover (click to pin), which the deck's
+           click-to-advance handler leaves alone. -->
+      <figure class="fig-diagram">
+        <svg class="diag diag--disc" viewBox="0 0 1290 600" role="img" aria-labelledby="disc-diag-title">
+          <title id="disc-diag-title">The $H^2$ variational problem splits into a conforming
+            discretisation, which needs $C^1$ elements and Nitsche boundary conditions, and a
+            non-conforming one, which uses a $C^0$-hybrid interior penalty method at the price
+            of a more involved analysis.</title>
+          <defs>
+            <marker id="disc-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z"/>
+            </marker>
+            <marker id="disc-arrow-hl" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z"/>
+            </marker>
+          </defs>
+
+          <!-- the problem both routes start from: on the slide from the start -->
+          <g class="diag-node diag-node--form">
+            <rect x="10" y="210" width="380" height="180" rx="30"/>
+            <foreignObject x="10" y="210" width="380" height="180">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--formula">
+                <div>Find $u \in V$:<br/>$a(u,v) = (f,v)_{\Omega} \quad \forall v \in V$<br/>
+                  $V \subset H^2(\Omega)$</div>
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- upper branch: keep the conformity -->
+          <g class="fragment" data-step="conf" data-chain="conf">
+            <path class="diag-edge" d="M 398 268 C 452 246 466 172 512 146"/>
+          </g>
+          <g class="diag-node fragment" data-step="conf" data-chain="conf">
+            <rect x="520" y="85" width="320" height="110" rx="30"/>
+            <foreignObject x="520" y="85" width="320" height="110">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="conf">
+                <span>conforming<br/>$V_h \subset V$</span></button>
+            </foreignObject>
+          </g>
+          <g class="fragment" data-step="conf" data-chain="conf">
+            <path class="diag-edge" d="M 848 140 L 932 140"/>
+          </g>
+          <g class="diag-node fragment" data-step="conf" data-chain="conf">
+            <rect x="940" y="65" width="340" height="150" rx="30"/>
+            <foreignObject x="940" y="65" width="340" height="150">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="conf">
+                <span>$C^1$ elements<br/>Argyris, HCT<br/>+ Nitsche for b.c.</span></button>
+            </foreignObject>
+          </g>
+          <g class="fragment" data-step="conf" data-chain="conf">
+            <foreignObject class="diag-label" x="940" y="222" width="340" height="70">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--label">
+                <div>high degree $p$ and/or special meshes,<br/>curved geometries are difficult</div>
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- lower branch: give it up -->
+          <g class="fragment" data-step="nonconf" data-chain="nonconf">
+            <path class="diag-edge" d="M 398 332 C 452 354 466 428 512 454"/>
+          </g>
+          <g class="diag-node fragment" data-step="nonconf" data-chain="nonconf">
+            <rect x="520" y="405" width="320" height="110" rx="30"/>
+            <foreignObject x="520" y="405" width="320" height="110">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="nonconf">
+                <span>non-conforming<br/>$V_h \not\subset V$</span></button>
+            </foreignObject>
+          </g>
+          <g class="fragment" data-step="nonconf" data-chain="nonconf">
+            <path class="diag-edge" d="M 848 460 L 932 460"/>
+          </g>
+          <g class="diag-node fragment" data-step="nonconf" data-chain="nonconf">
+            <rect x="940" y="385" width="340" height="150" rx="30"/>
+            <foreignObject x="940" y="385" width="340" height="150">
+              <button xmlns="http://www.w3.org/1999/xhtml" type="button"
+                      class="diag-text diag-btn" data-node="nonconf">
+                <span>$C^0$-hybrid<br/>interior penalty</span></button>
+            </foreignObject>
+          </g>
+          <g class="fragment" data-step="nonconf" data-chain="nonconf">
+            <foreignObject class="diag-label" x="940" y="542" width="340" height="70">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="diag-text diag-text--label">
+                <div>low degree, standard meshes,<br/>more involved analysis</div>
+              </div>
+            </foreignObject>
+          </g>
+        </svg>
+      </figure>
+    </div>
+    <div class="ref-stack">
+      <p class="ref">Farrell, vB, Zerbinati, <em>Analysis and numerical analysis of the nematic
+         Helmholtz&ndash;Korteweg equation</em>, arXiv, 2025.</p>
+      <p class="ref">vB, <em>A hybrid $C^0$-interior penalty method for the nematic
+         Helmholtz&ndash;Korteweg equation</em>, arXiv, 2026.</p>
+    </div>
+  </section>
+
+  <!-- ---- Conforming approximation --------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">$H^2$-conforming approximation</h2>
+    <div class="slide-body">
+      <div class="columns columns--wide-left">
+        <ul>
+          <li>Discrete space with polynomial degree $p \ge 3$
+          \[ X_h := \{ v_h \in H^2(\Omega) : v_h|_K \in P_p(K), \forall K \in \mathcal{T}_h \} \subset H^2(\Omega) \]
+            <ul>
+              <li><span class="alert">Argyris</span> needs $p = 5$ in 2D and $p = 9$ in 3D</li>
+              <li><span class="alert">HCT</span> on a split needs $p = 3$ in 2D and $p = 5$ in 3D</li>
+            </ul>
+          </li>
+          <li class="fragment">Discrete problem: find $u_h \in X_h$ s.t. $a_h(u_h,v_h) = (f,v_h)_{\Omega}$, 
+            \[ a_h(u_h,v_h) \coloneqq a(u_h,v_h) + \mathcal{N}_h(u_h,v_h) + \eta \mathcal{S}_h(u_h,v_h). \]
+          </li>
+          <ul> 
+            <li class="fragment"> Nitsche terms, e.g. 
+              \[ \alpha (\dn \Delta u_h,v_h)_{\partial \Omega} + \alpha (u_h, \dn \Delta v_h)_{\partial \Omega} \]
+            </li>
+            <li class="fragment"> Stabilisation term
+              \[ \mathcal{S}_h(u_h,v_h) \coloneqq h^{-3} (u_h,v_h)_{\partial \Omega}\]  
+            </li>
+          </ul>
+        </ul>
+
+        <!-- dofs of the Argyris element: the tikz sketch of main.tex as SVG -->
+        <figure>
+          <svg class="sketch-svg" viewBox="-55 -55 310 310" style="max-height:38vh" aria-hidden="true">
+            <polygon points="0,200 0,0 200,200" fill="none" stroke="#14181c" stroke-width="2"/>
+            <!-- vertex dofs: value (dot), gradient (inner ring), hessian (outer ring) -->
+            <g stroke="#14181c" stroke-width="1.6" fill="none">
+              <circle cx="0" cy="200" r="20"/><circle cx="0" cy="200" r="30"/>
+              <circle cx="0" cy="0"   r="20"/><circle cx="0" cy="0"   r="30"/>
+              <circle cx="200" cy="200" r="20"/><circle cx="200" cy="200" r="30"/>
+            </g>
+            <g fill="#14181c">
+              <circle cx="0" cy="200" r="5"/><circle cx="0" cy="0" r="5"/><circle cx="200" cy="200" r="5"/>
+            </g>
+            <!-- edge-midpoint normal derivatives -->
+            <g stroke="#235f96" stroke-width="2.6" marker-end="url(#dofarrow)">
+              <path d="M 0,100 L -42,100"/>
+              <path d="M 100,200 L 100,242"/>
+              <path d="M 100,100 L 130,70"/>
+            </g>
+            <defs>
+              <marker id="dofarrow" viewBox="0 0 10 10" refX="9" refY="5"
+                      markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#235f96"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>dofs of the Argyris element ($p = 5$)</figcaption>
+        </figure>
+      </div>
+    </div>
+    <p class="ref">Farrell, vB, Zerbinati, <em>Analysis and numerical analysis of the nematic
+       Helmholtz&ndash;Korteweg equation</em>, arXiv, 2025.</p>
+  </section>
+
+
+
+   <!-- ---- Conforming approximation --------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">Stability of the conforming discretisation</h2>
+    <div class="slide-body">
+      <ul>
+        <li>Estimate Nitsche terms with inverse trace estimates:
+        \[ \Vert \dn \Delta u_h \Vert_{\partial \Omega} \le C h^{-3/2}\Vert \Delta u_h \Vert_{\Omega
+        }, \qquad \Vert \dn (\nHn{u_h}) \Vert_{\partial \Omega} \le C h^{-3/2} \vert u_h \vert_{H^2(\Omega)} \]</li>
+      </ul>
+       <div class="box fragment">
+        <div class="box-title">Discrete G&aring;rding inequality</div>
+        <div class="box-body">
+          <p>Let $\eta > 0$ be sufficiently large. Then, there exist constants $C_1,C_2$ such that</p>
+          \[  \Re a_h(u_h,u_h) \ge C_1 \Vert u_h \Vert_{H^2(\Omega)}^2 - C_2 \Vert u_h \Vert_{L^2(\Omega)}^2. \]
+        </div>
+      </div>
+      <ul>
+        <li class="fragment">stability then follows from the abstract arguments presented later</li>
+      </ul>
+    </div>
+    <p class="ref">Farrell, vB, Zerbinati, <em>Analysis and numerical analysis of the nematic
+       Helmholtz&ndash;Korteweg equation</em>, arXiv, 2025.</p>
+  </section>
+
+  <!-- ---- C0 hybrid interior penalty --------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">$C^0$-hybrid interior penalty</h2>
+    <div class="slide-body">
+      <div class="columns columns--wide-left columns--top">
+        <ul>
+          <li>$V_h \coloneqq \left( \mathbb{P}^p(\Th) \cap H^1_{\Gamma_D}(\Omega) \right)
+              \times \mathbb{P}^{p-1}(\Fh)$</li>
+          <li class="fragment">unknowns are tuples
+            \[ \uh \coloneqq (\uvol, \ufac), \qquad \uvol \approx u, \ \ufac \approx \dn u \]</li>
+          <li class="fragment">HDG-jump operator:
+            \[ \hdgjump{\dn \uvol} \coloneqq \dn \uvol - \ufac \]</li>
+          <li class="fragment" data-step="condensation">static condensation eliminates the higher-order interior bubbles
+            <span class="aside">far fewer <code>dofs</code> at higher $p$</span></li>
+        </ul>
+        <!-- dof layout and dof table share one slot: the last click fades the
+             sketch out and gives the table the whole column
+             (see .fig-stack in css/style.css) -->
+        <div class="fig-fill fig-stack fig-stack--center">
+          <figure style="margin:0">
+            <img src="figs/c0hdgvisualization.svg" alt="dof layout of the C0-HDG space" style="max-height:40vh">
+            <figcaption>degree $p = 4$:<br>$(p+1)(p+2)/2$ interior dofs<br>$p$ facet dofs per facet</figcaption>
+          </figure>
+          <div class="fragment" data-step="condensation">
+            <table class="data-table">
+              <thead>
+                <tr><th>$p$</th><th>$C^0$-IP</th>
+                    <th class="col-group">$C^0$-HIP</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>3</td><td>346 507</td><td class="col-group col-hl">327 195</td></tr>
+                <tr><td>5</td><td>1 990 431</td><td class="col-group col-hl">1 104 475</td></tr>
+                <tr><td>7</td><td>6 648 251</td><td class="col-group col-hl">2 338 651</td></tr>
+                <tr><td>9</td><td>16 740 991</td><td class="col-group col-hl">4 029 723</td></tr>
+                <tr><td>11</td><td>35 406 603</td><td class="col-group col-hl">6 177 691</td></tr>
+              </tbody>
+            </table>
+            <p class="table-caption">nonzero matrix entries,<br>mesh with $1896$ elements</p>
+          </div>
+        </div>
+      </div>
+      <!-- the discrete form is wider than a column, so it sits under both of
+           them and keeps the deck's ordinary formula size -->
+      <ul>
+        <li class="fragment">discrete bilinear form, stabilisation parameter $\stab &gt; 0$:
+        \[ \begin{aligned}
+          a_h(\uh,\vh) &\coloneqq (\Am : \hessian \uvol, \Delta \vh)_{\Th}
+            + (\Am:\hessian \uvol, \hdgjump{\dn \uvol})_{\partial \Th}
+            + \stab \left( h^{-1}\hdgjump{\dn \uvol},\hdgjump{\dn \vvol} \right)_{\partial \Th} \\
+          &\qquad + (\nabla \uvol,\nabla \vvol)_{\Omega} - k^2 (\uvol,\vvol)_{\Omega}
+            \mathbin{\color{gray}{-}} {\color{gray}{i \theta (\uvol,\vvol)_{\Fh^{R}}}}
+        \end{aligned} \]</li>
+      </ul>
+    </div>
+    <p class="ref">Dong, Ern, <em>$C^0$-hybrid high-order methods for biharmonic problems</em>, IMAJNA, 2023.</p>
+  </section>
+
+  <!-- ---- Abstract tools ------------------------------------------------------ -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">Abstract tools</h2>
+    <div class="slide-body">
+      <ul>
+        <li>non-conforming: $V_h \not\subset V$ $\Rightarrow$ discrete approximation scheme (DAS)
+          <span class="cite">Vainikko (1981)</span></li>
+         <li class="fragment">$V_h \not\subset V$, projection $\pi_h : V \to V_h$ s.t.
+          $\lim_{h \to 0} \Vert \pi_h u \Vert_{V_h} = \Vert u \Vert_{V}$ for all $u \in V$
+          <span class="aside">convergence $u_h \overset{\pi_h}{\to} u$ and weak convergence
+            $u_h \overset{\pi_h}{\rightharpoonup} u$</span></li>
+        <li class="fragment">$a_h(\cdot,\cdot)$ asymptotically consistent:
+            $a_h(\pi_h u, v_h) \to a(u,v)$ whenever $v_h \overset{\pi_h}{\rightharpoonup} v$</li>
+        <li class="fragment">$\exists$ maps $\iota_h : V_h \to W$ uniformly bounded mirroring
+            $V \hookrightarrow W$ compact
+          <span class="aside">$\exists J \in \mathcal{L}(V,W)$ s.t. $\forall$ bounded $\seqh{v}$
+            with $v_h \overset{\pi_h}{\rightharpoonup} v$, $v \in V$, we have that
+            $\iota_h v_h \to Jv$ strongly in $W$.</span></li>
+      </ul>
+      <div class="box fragment">
+        <div class="box-title">Discrete G&aring;rding &rArr; asymptotic stability
+          <span class="cite">Halla, Lehrenfeld, Stocker (2025)</span></div>
+        <div class="box-body">
+          <p>If $a_h(\cdot,\cdot)$ satisfies the discrete G&aring;rding inequality</p>
+          \[ \Re a_h(u_h,u_h) \ge \widetilde{C}_V \Vert u_h \Vert_{V_h}^2
+             - \widetilde{C}_W \Vert \iota_h u_h \Vert_{W}^2 \qquad \forall u_h \in V_h, \]
+          <p>then $a_h(\cdot,\cdot)$ is <span class="alert">asymptotically stable</span>, i.e.,
+             inf-sup stable with $h$-independent constant for $h \le h_0$.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Discrete elliptic regularity ----------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">Discrete elliptic regularity</h2>
+    <div class="slide-body">
+      <div class="box">
+        <div class="box-title">Lemma (Discrete elliptic regularity)</div>
+        <div class="box-body">
+          <p>Let $h \le 1$. For any $\uh \in V_h$, we have that</p>
+          \[ \Vert \hessian \uvol \Vert_{\Th} \le \Vert \Delta_h \uh \Vert_{\Th} + C_E \vert \uh \vert_{\mathcal{S}_h}, \]
+          <p>with constant $C_E &gt; 0$ independent of $h$.</p>
+        </div>
+      </div>
+      <div class="box fragment">
+        <div class="box-title">Theorem (Discrete G&aring;rding inequality)</div>
+        <div class="box-body">
+          <p>If $\stab &gt; 0$ is sufficiently large,
+             then there exist $h$-independent constants
+             $\widetilde{C}_V, \widetilde{C}_{L^2} &gt; 0$ such that</p>
+          \[ \Re a_h(\uh,\uh) \ge \widetilde{C}_V \Vert \uh \Vert^2_{V_h}
+             - \widetilde{C}_{L^2} \Vert \uvol \Vert^2_{\Omega} \qquad \forall \uh \in V_h. \]
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Stability & convergence ----------------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Discretisation</p>
+    <h2 class="slide-title">Stability &amp; convergence</h2>
+    <div class="slide-body">
+      <div class="box">
+        <div class="box-title">Theorem (Stability &amp; convergence)</div>
+        <div class="box-body">
+          <p>If $\stab &gt; 0$ is sufficiently large, then $\exists\, h_0 &gt; 0$ such that for all
+             $h \le h_0$ the discrete problem has a <span class="alert">unique</span> solution
+             $\uh \in V_h$. Moreover, if $u \in V$ solves the continuous problem,</p>
+          \[ \lim_{h \to 0} \Vert u - \uh \Vert_{V_h} = 0. \]
+        </div>
+      </div>
+      <div class="box fragment">
+        <div class="box-title">Theorem (Convergence estimate)</div>
+        <div class="box-body">
+          <p>If additionally $u \in V \cap H^{2+s}(\Omega)$, $s &gt; 1$, then</p>
+          \[ \Vert u - \uh \Vert_{V_h} \le C \, h^{\min\{p-1,s\}} \Vert u \Vert_{H^{2+s}(\Omega)}. \]
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 6. SECTION: NUMERICAL EXPERIMENTS                             -->
+  <!-- ============================================================ -->
+  <section class="slide slide--section">
+    <p class="section-number">05</p>
+    <h2>Numerical experiments</h2>
+  </section>
+
+
+  <!-- ---- Convergence study ------------------------------------------------------ -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical experiments</p>
+    <h2 class="slide-title">Convergence study</h2>
+    <div class="slide-body">
+      <div class="columns columns--wide-right">
+        <ul>
+          <li>unit disk $\Omega$, sound-soft $\Gamma_D = \partial \Omega$</li>
+          <li>exact solution:
+            \[ u_{\text{ex}}(\vec{x}) = e^{i (\vec{k} \cdot \vec{x})} \]
+            <span class="aside">with $\vec{k}$ from the dispersion relation, homogenised to zero data</span></li>
+          <li>$\vec{n} = (1,0)^\top$, $k = 30$, $\alpha = 10^{-2}$, $\stab = 50 p^2$</li>
+          <li>error in the broken $\Vert \cdot \Vert_{V}$-norm, refined meshes
+              $h \approx 0.2 \cdot 2^{-L}$</li>
+          <!-- the closing bullet and the plots it describes share a data-step,
+               so they come up on the same click (see stepsOf in js/slides.js) -->
+          <li class="fragment" data-step="rates">observe the predicted rate $\mathcal{O}(h^{p-1})$ for
+              $p \in \{2,3,4,5\}$</li>
+        </ul>
+        <!-- figs/convergence.html is generated by code/make_convergence_plot.py
+             from data/convergenceCircleNewWithBetaNeg.csv, the same file (and
+             filter) the tikz figure in data/convergence.tex uses. It carries
+             its own dropdown for the right panel's beta; the static
+             figs/convergence.svg it replaces is still in the repo. -->
+        <figure class="fragment" data-step="rates">
+          <iframe src="figs/convergence.html" class="slide-iframe slide-iframe--column-lg"
+                  title="Convergence rates for p = 2..5, isotropic against nematic"
+                  loading="eager"></iframe>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Scattering ------------------------------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical experiments</p>
+    <h2 class="slide-title">Scattering</h2>
+    <div class="slide-body">
+      <!-- figs/webgui_scattering_{isotropic,nematic}.html are exported from
+           code/scattering.ipynb via export_webgui(), same as the scenes on the
+           motivation slide; both share the vendored js/webgui.js runtime. -->
+      <div class="fig-row">
+        <figure class="webgui-figure">
+          <iframe src="figs/webgui_scattering_isotropic.html" class="webgui-frame"
+                  title="Scattering off a sound-soft object, isotropic"
+                  loading="eager"></iframe>
+          <figcaption>isotropic, $\vec{n} = (0,0)^\top$</figcaption>
+        </figure>
+        <figure class="webgui-figure">
+          <iframe src="figs/webgui_scattering_nematic.html" class="webgui-frame"
+                  title="Scattering off a sound-soft object, nematic"
+                  loading="eager"></iframe>
+          <figcaption>nematic, $\vec{n} \neq 0$</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical experiments</p>
+    <h2 class="slide-title">Tunable total internal reflection</h2>
+    <div class="slide-body">
+      <!-- figs/webgui_scattering_{isotropic,nematic}.html are exported from
+           code/scattering.ipynb via export_webgui(), same as the scenes on the
+           motivation slide; both share the vendored js/webgui.js runtime. -->
+      <div class="fig-row">
+        <figure class="webgui-figure">
+          <iframe src="code/webgui_TIR.html" class="webgui-frame"
+                  title="TIR"
+                  loading="eager"></iframe>
+          <figcaption>$\vec{n}$ discontinuous</figcaption>
+        </figure>
+        <figure class="webgui-figure">
+          <iframe src="code/webgui_TIR_off.html" class="webgui-frame"
+                  title="No TIR"
+                  loading="eager"></iframe>
+          <figcaption>$\vec{n}$ continuous</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Three-dimensional example ----------------------------------------------- -->
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical experiments</p>
+    <h2 class="slide-title">Three-dimensional example</h2>
+    <div class="slide-body">
+      <div class="fig-grid">
+        <figure>
+          <img src="figs/scattering3d_x_multipleObstacles.png" alt="3D scattering, director along x">
+          <figcaption>$\vec{n} = (1,0,0)^\top$</figcaption>
+        </figure>
+        <figure>
+          <img src="figs/scattering3d_y_multipleObstacles.png" alt="3D scattering, director along y">
+          <figcaption>$\vec{n} = (0,1,0)^\top$</figcaption>
+        </figure>
+        <figure>
+          <img src="figs/scattering3d_z_multipleObstacles.png" alt="3D scattering, director along z">
+          <figcaption>$\vec{n} = (0,0,1)^\top$</figcaption>
+        </figure>
+        <figure>
+          <img src="figs/eval3D_x.png" alt="Solution on a planar cut, director along x">
+          <figcaption>planar cut, $\vec{n} = (1,0,0)^\top$</figcaption>
+        </figure>
+        <figure>
+          <img src="figs/eval3D_y.png" alt="Solution on a planar cut, director along y">
+          <figcaption>planar cut, $\vec{n} = (0,1,0)^\top$</figcaption>
+        </figure>
+        <figure>
+          <img src="figs/eval3D_z.png" alt="Solution on a planar cut, director along z">
+          <figcaption>planar cut, $\vec{n} = (0,0,1)^\top$</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Scattering by submarine --------------------------------------------------- -->
+    <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical experiments</p>
+    <h2 class="slide-title">Scattering by submarine</h2>
+    <div class="slide-body">
+        <figure class="webgui-figure">
+          <iframe src="figs/webgui_submarin.html" class="webgui-frame"
+                  title="Submarine"
+                  loading="eager"></iframe>
+          <figcaption>Submarine mesh (BeTSSi Model)</figcaption>
+        </figure>
+    </div>
+  </section>
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Numerical experiments</p>
+    <h2 class="slide-title">Scattering by submarine</h2>
+    <div class="slide-body">
+      <div class="fig-row">
+        <figure>
+          <img src="figs/nonnematicsubmarine_0.003.png" alt="Submarine scattering, isotropic">
+          <figcaption>isotropic</figcaption>
+        </figure>
+        <figure>
+          <img src="figs/nematicsubmarine_0.003.png" alt="Submarine scattering, nematic">
+          <figcaption>nematic</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 7. SECTION: CONCLUSION                                        -->
+  <!-- ============================================================ -->
+
+  <section class="slide">
+    <img src="img/GOE_logo.png" alt="" class="slide-logo">
+    <p class="slide-eyebrow">Conclusion</p>
+    <h2 class="slide-title">Summary & Outlook</h2>
+    <div class="slide-body">
+      <div class="box">
+        <div class="box-title">Summary</div>
+        <div class="box-body">
+          <ul>
+            <li class="fragment">the nematic Helmholtz&ndash;Korteweg equation as a model of
+              acoustic wave propagation in nematic liquid crystals</li>
+            <li class="fragment">well-posedness of the nematic Helmholtz&ndash;Korteweg equation
+              <span class="aside">explicit smallness condition on $\beta$, (mostly) independent of the
+                isotropic stability constant</span></li>
+            <li class="fragment">two discretisations:</li>
+            <ul>
+            <li class="fragment">$H^2$-conforming</li>
+            <li class="fragment">$C^0$-hybrid interior penalty</li>
+            </ul>  
+            <li class="fragment">numerical experiments, including the first 3D simulations of the
+              nematic anisotropy</li>
+          </ul>
+        </div>
+      </div>
+      <!-- what the talk does not cover: the two assumptions the pictures in the
+           numerics section already push against. The box and its first bullet
+           share a step, so the box never appears empty. -->
+      <div class="box fragment" data-step="outlook">
+        <div class="box-title">Outlook</div>
+        <div class="box-body">
+          <ul>
+            <li class="fragment" data-step="outlook">analysis of the transmission problem
+              <span class="aside">conditions across an interface between two media</span></li>
+            <li class="fragment">non-constant director $\vec{n}$
+              <span class="aside">assumed $\vec{n}$ constant, tackle variable $\bm{n}$ via Energy minimization</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 8. CLOSING SLIDE                                              -->
+  <!-- ============================================================ -->
+  <section class="slide slide--closing">
+    <div class="closing-row">
+      <div>
+        <p class="closing-eyebrow">$C^0$-hybrid IP for the nematic Helmholtz&ndash;Korteweg equation</p>
+        <h2>Thank you!</h2>
+        <div class="accent-rule"></div>
+        <p class="presenter">Tim van Beeck</p>
+        <p class="affiliation">University of G&ouml;ttingen,<br>
+           Institute for Numerical and Applied Mathematics</p>
+        <p class="closing-thanks">
+          Thanks to <strong>Umberto Zerbinati</strong> for the nematic drum,<br>
+          and to <strong>Philip Lederer</strong> for the html-talk template.
+        </p>
+      </div>
+      <div class="qr-card">
+        <img src="figs/qr_logo.png" alt="QR code linking to the preprint">
+      </div>
+    </div>
+    <div class="paper-ref-stack">
+      <p class="paper-ref">P.&nbsp;E.&nbsp;Farrell, U.&nbsp;Zerbinati, <em>Time-harmonic waves in
+         Korteweg and nematic-Korteweg fluids</em>, Phys. Rev. E <strong>111</strong>, 035413, 2025.</p>
+      <p class="paper-ref">P.&nbsp;E.&nbsp;Farrell, T.&nbsp;van&nbsp;Beeck, U.&nbsp;Zerbinati,
+         <em>Analysis and numerical analysis of the nematic Helmholtz&ndash;Korteweg equation</em>,
+         arXiv:2503.10771, 2025.</p>
+      <p class="paper-ref">T.&nbsp;van&nbsp;Beeck, <em>A hybrid $C^0$-interior penalty method for the
+         nematic Helmholtz&ndash;Korteweg equation</em>, arXiv, 2026.</p>
+    </div>
+  </section>
+
+</div>
+
+<button class="menu-toggle" aria-label="Open slide menu" title="Slides &amp; fullscreen"></button>
+<div class="menu-backdrop"></div>
+<aside class="menu-panel">
+  <button class="menu-fullscreen">
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <path fill="currentColor" d="M4 9V4h5v2H6v3H4zm10-5h5v5h-2V6h-3V4zM4 15h2v3h3v2H4v-5zm14 3v-3h2v5h-5v-2h3z"/>
+    </svg>
+    Fullscreen
+  </button>
+  <div class="menu-zoom">
+    <div class="menu-zoom-row">
+      <label for="zoom-range">Slide size</label>
+      <span class="menu-zoom-input-wrap">
+        <input type="number" id="zoom-value" class="menu-zoom-value" min="50" max="250" step="5" value="100">%
+      </span>
+    </div>
+    <input type="range" id="zoom-range" class="menu-zoom-range" min="50" max="250" step="5" value="100">
+  </div>
+  <nav class="menu-list"></nav>
+</aside>
+
+<span class="slide-counter"></span>
+<div class="progress-bar"></div>
+
+<script src="js/slides.js"></script>
+</body>
+</html>
