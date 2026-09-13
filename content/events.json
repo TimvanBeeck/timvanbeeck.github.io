@@ -6,7 +6,9 @@
       "location": "Borgo dei Gatti, Golferenzo, Oltrepò Pavese, Italy",
       "role": "Invited Speaker", 
       "url" : "https://sites.google.com/view/ordered-fluids/home-page"
-    },
+    }  
+  ],
+  "past": [
     {
       "date": "Sep 2026",
       "name": "Trefftz Workshop 2026",
@@ -14,8 +16,7 @@
       "role": "Speaker", 
       "slides": "TREFFTZ26/index.html",
       "url": "https://trefftz2026.univie.ac.at/"
-    }  ],
-  "past": [
+    },
     {
       "date": "Aug 2026",
       "name": "SIMULA 2026",
