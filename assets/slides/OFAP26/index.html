@@ -294,13 +294,9 @@ MathJax = {
         <div class="box-body">
           \[ \rho_0 \partial_t^2 U + \div (\div \, \bm{\sigma}) = 0
              \qquad \Longrightarrow \qquad
-             - \rho_0 \omega^2 u + \div (\div \, \bm{\Sigma}) = 0, \]
-          <p class="text-soft">with $\bm{\Sigma}$ the amplitude of the linearised stress,
-             $\bm{\sigma} = \Re \left( \bm{\Sigma} e^{-i \omega t} \right)$.</p>
+             - \rho_0 \omega^2 u + \Re \left( \div (\div \, \bm{\sigma}) \right) = 0, \]
         </div>
       </div>
-      <p class="aside fragment">the same wave equation for every fluid; what changes is the
-         <span class="alert">constitutive law for $\bm{\sigma}$</span>.</p>
     </div>
   </section>
 
@@ -360,7 +356,7 @@ MathJax = {
               <p class="aside">the <span class="hl">nematic Helmholtz&ndash;Korteweg equation</span>
                  (after rescaling):</p>
               \[ \alpha \Delta^2 u + \beta \, \nabla \cdot \nabla \left( \nHn{u} \right)
-                 - \Delta u - k^2 u = 0 . \]
+                 - \Delta u - k^2 u = 0. \]
             </div>
           </div>
         </div>
