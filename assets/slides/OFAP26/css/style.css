@@ -1199,7 +1199,15 @@ mjx-container[display="true"] { margin: 0.5em 0 !important; }
   padding: 0 0.6em;
   margin: 0;
   cursor: pointer;
-  font: inherit;
+  /* No `font: inherit` here: the shorthand also resets font-size, to the
+     1.25rem inherited from .slide-body. That is a root-relative size, so the
+     zoom control in the menu scales it while the diagram around it -- sized in
+     svg user units off the viewBox -- stays put, and at 200% the node labels
+     outgrow their boxes. The size that applies instead is the 26 user units
+     .diag-text sets on this same element; only the pieces of the button's UA
+     font that .diag-text does not cover are taken from the diagram. */
+  font-weight: inherit;
+  font-style: inherit;
   color: inherit;
 }
 .diag-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }

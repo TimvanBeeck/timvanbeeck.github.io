@@ -1,15 +1,31 @@
 {
   "upcoming": [
     {
+      "date": "July 2027",
+      "name": "ICOSAHOM 2027",
+      "location": "Milan, Italy",
+      "role": "Speaker", 
+      "slides": "",
+      "url" : "https://icosahom2027.org/"
+    },
+    {
+      "date": "Jan 2027",
+      "name": "WONAPDE 2027",
+      "location": "Concepción, Chile",
+      "role": "Mini-symposium Organizer and Speaker", 
+      "slides": "",
+      "url" : "https://www.ci2ma.udec.cl/wonapde2027/index.php"
+    }  
+  ],
+  "past": [
+    {
       "date": "Sep 2026",
       "name": "Advances in Ordered Fluids and Alignment Phenomena: Modeling, Analysis, and Numerical Methods",
       "location": "Borgo dei Gatti, Golferenzo, Oltrepò Pavese, Italy",
       "role": "Invited Speaker", 
       "slides": "OFAP26/index.html",
       "url" : "https://sites.google.com/view/ordered-fluids/home-page"
-    }  
-  ],
-  "past": [
+    },
     {
       "date": "Sep 2026",
       "name": "Trefftz Workshop 2026",
