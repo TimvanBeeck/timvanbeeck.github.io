@@ -146,6 +146,22 @@ function renderTalkItem(event) {
     </li>`;
 }
 
+// Turns Markdown-style [text](url) into inline links
+function renderInlineLinks(text) {
+  return text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+function renderNewsItem(item) {
+  return `
+    <li class="talk-item">
+      <span class="talk-date">${item.date}</span>
+      <div class="talk-info">
+        <span>${renderInlineLinks(item.title)}</span>
+      </div>
+    </li>`;
+}
+
 /* ════════════════════════════════════════════════════
    Fetch helpers
    Note: requires an HTTP server — run `python -m http.server`
@@ -258,6 +274,45 @@ async function loadEvents() {
   } catch (e) {
     showError(upcomingEl, 'Could not load events. See note above.');
     pastEl.innerHTML = '';
+  }
+}
+
+async function loadNews() {
+  const latestEl = document.getElementById('news-latest');
+  if (!latestEl) return;
+
+  try {
+    const news = await fetchJSON('content/news.json');
+
+    const newsCount = document.getElementById('count-news');
+    if (newsCount) newsCount.textContent = news.length;
+
+    const shown = news.slice(0, 5);
+    latestEl.innerHTML = shown.map(renderNewsItem).join('')
+      || '<li class="talk-item"><span class="talk-loc">No news yet.</span></li>';
+
+    if (news.length > shown.length) {
+      latestEl.insertAdjacentHTML('afterend', '<a href="news.html" class="see-all-link">See all news →</a>');
+    }
+  } catch (e) {
+    showError(latestEl, 'Could not load news. See note above.');
+  }
+}
+
+async function loadAllNews() {
+  const allEl = document.getElementById('news-all');
+  if (!allEl) return;
+
+  try {
+    const news = await fetchJSON('content/news.json');
+
+    allEl.innerHTML = news.map(renderNewsItem).join('')
+      || '<li class="talk-item"><span class="talk-loc">No news yet.</span></li>';
+
+    const newsCount = document.getElementById('count-all-news');
+    if (newsCount) newsCount.textContent = news.length;
+  } catch (e) {
+    showError(allEl, 'Could not load news. Run <code>python -m http.server</code>.');
   }
 }
 
@@ -495,6 +550,7 @@ document.querySelectorAll('.fade-in-section').forEach(el => fadeObserver.observe
 
 Promise.all([loadCollaborators(), loadBib()]).then(() => {
   if (document.getElementById('pub-peer-review')) {
+    loadNews();
     loadPublications();
     loadEvents();
   }
@@ -503,5 +559,8 @@ Promise.all([loadCollaborators(), loadBib()]).then(() => {
   }
   if (document.getElementById('events-all-past')) {
     loadAllEvents();
+  }
+  if (document.getElementById('news-all')) {
+    loadAllNews();
   }
 });
