@@ -1,6 +1,14 @@
 {
   "upcoming": [
     {
+      "date": "Sep 2027",
+      "name": "Ordered Fluids, Alignment, and Collective Dynamics: Modeling, Analysis, and Computation",
+      "location": "Borgo dei Gatti, Golferenzo, Oltrepò Pavese, Italy",
+      "role": "Invited Speaker", 
+      "slides": "",
+      "url" : "https://sites.google.com/view/ordered-fluids/"
+    },
+    {
       "date": "July 2027",
       "name": "ICOSAHOM 2027",
       "location": "Milan, Italy",
