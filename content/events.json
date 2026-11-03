@@ -23,7 +23,15 @@
       "role": "Mini-symposium Organizer and Speaker", 
       "slides": "",
       "url" : "https://www.ci2ma.udec.cl/wonapde2027/index.php"
-    }  
+    },
+    {
+      "date": "Oct 2026",
+      "name": "Oxford Numerical Analysis Seminar",
+      "location": "Oxford, United Kingdom",
+      "role": "Seminar Talk",
+      "slides": "", 
+      "url": "https://www.maths.ox.ac.uk/node/82457"
+    }
   ],
   "past": [
     {
