@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>An Embbeded Trefftz DG Approach to Least Squares Finite Element Methods</title>
+<title>An Embedded Trefftz DG Approach to Least Squares Finite Element Methods</title>
 <link rel="stylesheet" href="css/style.css">
 
 <!-- MathJax: macros mirror the LaTeX macros of the beamer deck
@@ -108,7 +108,7 @@ MathJax = {
 
     <div class="title-block">
       <p class="event">Numerical Analysis Group Internal Seminar &nbsp;&middot;&nbsp; Oxford, UK &nbsp;&middot;&nbsp; Nov. 5th, 2026</p>
-      <h1>An Embbeded Trefftz DG Approach to Least Squares Finite Element Methods</h1>
+      <h1>An Embedded Trefftz DG Approach to Least Squares Finite Element Methods</h1>
       <div class="accent-rule"></div>
       <p class="authors">Tim van Beeck<sup>1</sup></p>
       <p class="joint">joint work with C.&nbsp;Lehrenfeld<sup>1</sup>, P.&nbsp;Stocker<sup>2</sup></p>
@@ -189,7 +189,7 @@ MathJax = {
            \ \ge\ \Vert \nabla u \Vert_{L^2(\Omega)}
            \ \ge\ \Vert \nabla u_h^{\text{Trefftz}} \Vert_{L^2(\Omega)}$</p>
     </div>
-    <p class="ref">E. Trefftz, <em>Ein Gegenstück zum ritzschen Verfahren</em>,
+    <p class="ref">E. Trefftz, <em>Ein Gegenstück zum Ritzschen Verfahren</em>,
       In Proc. 2nd Int. Cong. Appl. Mech., pages 131&ndash;137, Zürich, 1926.</p>
   </section>
 
@@ -271,7 +271,7 @@ MathJax = {
             relaxes the Trefftz constraint:
           \[ \IT = \{ v \in \Vh : \Pi_K \mathcal{L} v = 0  \ \forall K \in \Th \} \]
           </li>
-          <li class="fragment"><span class="alert">Main Idea:</span> express Trefftz basis $\{ \psi_j \}_{j=1}^M$ in terms of DG basis $\{ \varphi_i \}_{i=1}^N$ of $\Vh = \IP^k(\Th)$ via embedding $\ T \in \mathbb{R}^{N \times M}$
+          <li class="fragment"><span class="alert">Main Idea:</span> express Trefftz basis $\{ \psi_j \}_{j=1}^M$ in terms of DG basis $\{ \varphi_i \}_{i=1}^N$ of $\Vh = \IP^p(\Th)$ via embedding $\ T \in \mathbb{R}^{N \times M}$
             \[ \text{Solve } T^\top A T = T^{\top} f \]
           </li>
 
@@ -449,7 +449,7 @@ MathJax = {
         <div class="paradigm paradigm--yes fragment" data-step="etls-12">
           <p class="paradigm-head"><span class="paradigm-n">2</span> Standard spaces</p>
           <p class="paradigm-verdict"><span class="paradigm-mark">&#10003;</span>
-            <span>DG space $\IP^k(\Th)$, no <span class="nowrap">$H^2$-conformity</span></span></p>
+            <span>DG space $\IP^p(\Th)$, no <span class="nowrap">$H^2$-conformity</span></span></p>
         </div>
         <div class="paradigm paradigm--no fragment" data-step="ls-table">
           <p class="paradigm-head"><span class="paradigm-n">3</span> Conditioning</p>
@@ -466,7 +466,7 @@ MathJax = {
     <h2 class="slide-title">Application to Least Squares FEM</h2>
     <div class="slide-body">
       <ul>
-        <li class="fragment">DG least squares (DGLS): find $u_h \in V_h \coloneqq \IP^k(\Th)$ such that $u_h$ solves  
+        <li class="fragment">DG least squares (DGLS): find $u_h \in V_h \coloneqq \IP^p(\Th)$ such that $u_h$ solves  
           \[ \min_{v_h \in \Vh} \J_h(v_h), \qquad \J_h(v_h) = \Vert f - \A v_h \Vert^2_{L^2(\Th)} + \vert v_h \vert^2_{j,h} \]
         </li>
         <li class="fragment">Conformity is replaced by a jump stabilisation: for $\alpha_d, \alpha_n, \alpha_b &gt; 0$
@@ -480,7 +480,7 @@ MathJax = {
       <div class="box fragment">
         <div class="box-title">Embedded Trefftz DG least squares (ETLS)</div>
         <div class="box-body">
-          We define the solution manifold 
+          Let $\Pi_K : \IP^p(K) \to \IP^{p-2}(K)$ be the elementwise $L^2$-orthogonal projection. We define the solution manifold 
           \[ V_h^f \coloneqq \{ v_h \in \Vh : \Pi (\A v_h - f) = 0 \} = u_p + \IT. \]
     
           The ETLS method then solves the <span class="alert">constrained</span> minimisation problem
@@ -504,14 +504,14 @@ MathJax = {
           <div class="box fragment">
             <div class="box-title">Theorem (Equivalence)</div>
             <div class="box-body">
-              Let $V_h^f \neq \emptyset$ and suppose that $\vert \cdot \vert_{j,h}$ is a norm on $\IT$. Then, the ETDG-LS method has a unique solution $u_h \in V_h^f$ and the following are  equivalent:
+              Let $V_h^f \neq \emptyset$ and suppose that $\vert \cdot \vert_{j,h}$ is a norm on $\IT$. Then, the ETLS method has a unique solution $u_h \in V_h^f$ and the following are  equivalent:
               <ol>
                 <li>$u_h$ solves the constrained minimisation problem
                   \[ u_h \in \arg\min_{v_h \in V_h^f} \vert v_h \vert^2_{j,h}; \]</li>
                 <li>$u_h$ solves the mixed problem: find $u_h \in \Vh$ such that 
                   \[ \begin{aligned}
                       (\Pi \A u_h, q_h)_{L^2(\Th)} &= (\Pi f, q_h)_{L^2(\Th)}
-                        && \forall\, q_h \in \IQ_h, \\
+                        && \forall\, q_h \in \IP^{p-2}(\Th), \\
                       j_h(u_h, v_\IT) &= 0
                         && \forall\, v_\IT \in \IT;
                     \end{aligned} \]
@@ -534,7 +534,7 @@ MathJax = {
     <h2 class="slide-title">Model problem</h2>
     <div class="slide-body">
       <p>General model problem: find $u \in X$ such that
-      \[ \A u \coloneqq \mathbb{A} : D^2 u + \mathbf{b} \cdot \nabla u + c u = f \]</p>
+      \[ \A u \coloneqq \mathbb{A} : \hessian u + \mathbf{b} \cdot \nabla u + c u = f \]</p>
       <p>where $\mathbb{A} \in L^\infty(\Omega, \mathbb{R}^{d \times d}_{\text{sym}})$, $\mathbf{b} \in L^\infty(\Omega, \mathbb{R}^d)$, and $c \in L^\infty(\Omega)$, with $\mathbb{A}$ uniformly elliptic, i.e.,
       \[ \exists \alpha &gt; 0 : \xi^\top \mathbb{A}(x) \xi \ge \alpha \vert \xi \vert^2
          \quad \forall x \in \Omega, \quad \forall \xi \in \mathbb{R}^d. \]</p>
@@ -564,7 +564,7 @@ MathJax = {
   <section class="slide">
     <img src="img/GOE_logo.png" alt="" class="slide-logo">
     <p class="slide-eyebrow">Analysis</p>
-    <h2 class="slide-title">A closer look on the assumptions</h2>
+    <h2 class="slide-title">A closer look at the assumptions</h2>
     <div class="slide-body">
       <!-- frame only: fill in the three bullets -->
       <ul>
@@ -577,16 +577,15 @@ MathJax = {
         <li class="fragment"><span class="alert">Assumptions on $\mathbb{A}$:</span>
          <ol> 
           <li> Local Cordes condition (not too anisotropic): $\exists \gamma \in L^\infty(\Omega)$, $\gamma > 0$ such that
-            \[ \delta_K \coloneqq \operatorname{ess sup}_{x \in K} \vert \gamma(x) \mathbb{A}(x) - x \vert_F < 1\]
+            \[ \delta_K \coloneqq \operatorname*{ess\,sup}_{x \in K} \vert \gamma(x) \mathbb{A}(x) - \Idm \vert_F < 1\]
           </li>
           <li> Controlled oscillations (not too rough inside elements):
-            \[ \osc_K(\gamma \mathbb{A}) \coloneqq \operatorname{ess sup}_{x \in K} \vert \gamma(x) \mathbb{A}(x) - \overline{\gamma(x) \mathbb{A}(x)} \vert_F < C (1- \delta_K)\]
+            \[ \operatorname{osc}_K(\gamma \mathbb{A}) \coloneqq \operatorname*{ess\,sup}_{x \in K} \vert \gamma(x) \mathbb{A}(x) - \overline{\gamma(x) \mathbb{A}(x)} \vert_F < C (1- \delta_K)\]
           </li>
          </ol>
         </li>
         <li class="fragment"><span class="alert">Smallness of $h$:</span>
-          <!-- TODO -->
-          &hellip;
+         \[ C(1-\delta_K) - \operatorname{osc}_K(\gamma \mathbb{A}) -  K \Vert \gamma \bm{b} \Vert_{L^\infty(K)} - h_K^2 \Vert \gamma c \Vert_{L^\infty(K)} > 0 \]
         </li>
       </ul>
     </div>
@@ -630,7 +629,7 @@ MathJax = {
       <div>
       <p>We consider the Laplace equation with Dirichlet boundary conditions:</p>
       \[ - \Delta u = f \text{ in } \Omega, \qquad
-         u = 0 \text{ on } \Gamma_{\text{D}} \]
+         u = g \text{ on } \Gamma_{\text{D}} \]
       <ul>
         <li class="fragment">$\Omega = (0,1)^2$, $u_{\text{ex}} = e^x \sin y$, source $f = 0$,
           Dirichlet data from $u_{\text{ex}}$, $p = 2,\dots,5$</li>
@@ -640,7 +639,7 @@ MathJax = {
           \[ \min_{(v, \bm{\tau}) \in U_h \times \Sigma_h}
              \Vert \div \bm{\tau} + f \Vert^2_{L^2(\Omega)}
              + \Vert \bm{\tau} - \nabla v \Vert^2_{L^2(\Omega)}
-             + \alpha \Vert v\Vert^2_{L^2(\partial \Omega)} \]
+             + \alpha \Vert v -g \Vert^2_{L^2(\partial \Omega)} \]
         </li>
       </ul>
       </div>
@@ -661,7 +660,7 @@ MathJax = {
     <p class="slide-eyebrow">Model problem</p>
     <h2 class="slide-title">The Helmholtz equation</h2>
     <div class="slide-body">
-      <p>We consider the Helmholtz equation with mixed impedance and sound soft boundary conditions:</p>
+      <p>We consider the Helmholtz equation with mixed impedance and sound-soft boundary conditions:</p>
       \[ - \Delta u - \omega^2 u = f \text{ in } \Omega, \qquad
          \nabla u \cdot \bm{n} - i \omega u = 0 \text{ on } \Gamma_{\text{R}}, \qquad
          u = 0 \text{ on } \Gamma_{\text{D}} \]
@@ -680,11 +679,11 @@ MathJax = {
         <div class="box-title">Issue</div>
         <div class="box-body">
           <ul> 
-            <li class="fragment"> Solution is not in $H^2(\Omega)$ ...</li>
+            <li class="fragment"> Solution is not in $H^2(\Omega)$, minimising $\vert v_h \vert^2_{j,h,H^2}$ converges to the wrong solution.</li>
             <li class="fragment"> The kernel space $\IT$ doesn't care 
               \[ \{ (\sigma, u) : \sigma - \nabla u = 0, \Pi (\div \sigma + \omega^2 u + f ) = 0 \} = \{ (\nabla v, v) : \Pi( \Delta v + \omega^2 v + f ) = 0 \} \]
             </li>
-            <li class="fragment"> Can we adjust minimisation problem???
+            <li class="fragment"> Can we adjust the minimisation problem?
               \[ \min_{v_h \in V_h^f} \vert v_h \vert^2_{j,h,H^2} \rightsquigarrow \min_{v_h \in V_h^f} \vert v_h \vert^2_{j,h,H^1}  \]
             </li>
           </ul>
@@ -865,13 +864,13 @@ MathJax = {
       <div>
         We consider a non-divergence form problem
       \[ \Am(x) : \hessian u = f \text{ in } \Omega, \qquad u = g \text{ on } \partial \Omega, \]
-      where $\Am$ is not differentiable, but fulfills a <span class="alert">Cordes condition</span> <span class="cite">Smears, S&uuml;li (2013)</span>.
+      where $\Am$ is not differentiable, but fulfils a <span class="alert">Cordes condition</span> <span class="cite">Smears, S&uuml;li (2013)</span>.
       <ul>
         <li class="fragment"> <span class="alert">Example:</span> $\Omega = (0,1)^3$, exact solution with point singularity
           \[ \Am(\bm{x}) = \Idm + \frac{\bm{x} \bm{x}^{\top}}{\vert \bm{x} \vert^2}, \qquad u_{\text{ex}} = \vert \bm{x} \vert^{1.6} \]
         </li>
         <li class="fragment">Linear system is <span class="alert"> SPD</span>: solve with CG and block Jacobi</li>
-        <li class="fragment" data-step="nondiv3d-h"> <span class="alert">Adaptive Loop:</span> Estimate with $\J_h$ and use D&ouml;rfler marking with $\theta = 0.3$</li>
+        <li class="fragment" data-step="nondiv3d-h"> <span class="alert">Adaptive Loop:</span> Estimate with $\eta$ and use D&ouml;rfler marking with $\theta = 0.3$</li>
         <li class="fragment" data-step="nondiv3d-fig">Exponential convergence with <span class="alert">hp-adaptivity</span></li>
       </ul>
       </div>
@@ -917,7 +916,7 @@ MathJax = {
       <div class="box fragment">
         <div class="box-title">Hamilton&ndash;Jacobi&ndash;Bellman equation with Cordes coefficients</div>
         <div class="box-body">
-          <p>Find $u$ with $u = 0$ on $\partial \Omega$ and
+          <p>$\Omega$ convex, $\Lambda$ compact metric space. Find $u$ with $u = 0$ on $\partial \Omega$ and
             \[ F[u] \coloneqq \sup_{\alpha \in \Lambda} \bigl( L^\alpha u - f^\alpha \bigr) = 0,
                \qquad L^\alpha v = a^\alpha : \hessian v + b^\alpha \cdot \nabla v - c^\alpha v, \]
             where the coefficients satisfy the <span class="alert">Cordes condition</span>
@@ -981,7 +980,7 @@ MathJax = {
     <h2 class="slide-title">Embedded Trefftz least squares</h2>
     <div class="slide-body">
       <p>Minimisation over $V_h^f = \{ v_h \in V_h: \Pi(\A v_h - f) = 0 \} = u_p + \IT$</p>
-      \[ \min_{v_h \in \Vh} \widehat{\J}_h(v_h) \ \text{ s.t. } \ \Pi(\A v_h - f) = 0
+      \[ \min_{v_h \in \Vh} \vert v_h \vert_{j,h}^2 \ \text{ s.t. } \ \Pi(\A v_h - f) = 0
          \qquad \Longleftrightarrow \qquad
          \min_{v_h \in u_p + \IT} \vert v_h \vert^2_{j,h} \]
 
@@ -994,7 +993,7 @@ MathJax = {
         <div class="paradigm paradigm--yes fragment">
           <p class="paradigm-head"><span class="paradigm-n">2</span> Standard spaces</p>
           <p class="paradigm-verdict"><span class="paradigm-mark">&#10003;</span>
-            <span>standard DG space $\IP^k(\Th)$, no conformity and
+            <span>standard DG space $\IP^p(\Th)$, no conformity and
               no auxiliary variable</span></p>
         </div>
         <div class="paradigm paradigm--no fragment">
@@ -1009,7 +1008,7 @@ MathJax = {
         <div class="box-body">
           <ul class="buys">
             <li class="fragment" data-step="buys"><span class="alert">Fewer dofs</span> at the same accuracy, in particular for high $p$</li>
-            <li class="fragment"><span class="alert">Adaptivity:</span> $\J_h$ is a reliable and efficient estimator</li>
+            <li class="fragment"><span class="alert">Adaptivity:</span> $\eta$ is a reliable and efficient estimator</li>
             <li class="fragment"><span class="alert">Flexibility:</span> variable and anisotropic
               $\Am$, non-divergence form, nonlinear $\A$, polytopal elements</li>
           </ul>
