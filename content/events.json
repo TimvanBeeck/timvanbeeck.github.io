@@ -23,7 +23,9 @@
       "role": "Mini-symposium Organizer and Speaker", 
       "slides": "",
       "url" : "https://www.ci2ma.udec.cl/wonapde2027/index.php"
-    },
+    }
+  ],
+  "past": [
     {
       "date": "Nov 2026",
       "name": "Oxford Numerical Analysis Seminar",
@@ -31,9 +33,7 @@
       "role": "Seminar Talk",
       "slides": "OxfordNA26/index.html",
       "url": "https://www.maths.ox.ac.uk/node/82457"
-    }
-  ],
-  "past": [
+    },
     {
       "date": "Sep 2026",
       "name": "Advances in Ordered Fluids and Alignment Phenomena: Modeling, Analysis, and Numerical Methods",
