@@ -370,6 +370,29 @@ async function loadCVData() {
 }
 
 /* ════════════════════════════════════════════════════
+   Page: research.html — publication cards next to the text
+   <div class="research-ref" data-pub="pub2"> takes the entry with that id
+   from content/publications.json.
+   ════════════════════════════════════════════════════ */
+
+async function loadResearchRefs() {
+  const slots = document.querySelectorAll('.research-ref[data-pub]');
+  if (!slots.length) return;
+
+  try {
+    const pubs = await fetchJSON('content/publications.json');
+    slots.forEach(slot => {
+      const pub = pubs.find(p => p.id === slot.dataset.pub);
+      if (!pub) return;
+      slot.innerHTML = renderPublication(pub);
+      wireCiteButtons(slot);
+    });
+  } catch (e) {
+    console.warn('Could not load publications.json:', e.message);
+  }
+}
+
+/* ════════════════════════════════════════════════════
    Mobile nav toggle
    ════════════════════════════════════════════════════ */
 
@@ -563,4 +586,5 @@ Promise.all([loadCollaborators(), loadBib()]).then(() => {
   if (document.getElementById('news-all')) {
     loadAllNews();
   }
+  loadResearchRefs();
 });

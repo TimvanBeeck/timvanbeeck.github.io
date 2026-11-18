@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- work in progress: reachable by link only, keep it out of search engines -->
+  <meta name="robots" content="noindex, nofollow">
+  <title>Research – Tim van Beeck</title>
+  <meta name="description" content="Research of Tim van Beeck: structure-preserving finite element methods, numerical methods for helioseismology, and acoustic waves in nematic liquid crystals.">
+  <meta property="og:title" content="Research – Tim van Beeck">
+  <meta property="og:description" content="Structure-preserving finite element methods, numerical methods for helioseismology, and acoustic waves in nematic liquid crystals.">
+  <meta property="og:image" content="https://timvanbeeck.github.io/assets/profile.jpg">
+  <meta property="og:url" content="https://timvanbeeck.github.io/research.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>(function(){var t=localStorage.getItem('theme');if(!t)t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#0f1419';}})()</script>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav id="navbar">
+    <a href="index.html" class="nav-brand">Tim van Beeck</a>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="research.html" class="active">Research</a></li>
+      <li><a href="index.html#news">News</a></li>
+      <li><a href="index.html#publications">Publications</a></li>
+      <li><a href="index.html#talks">Talks</a></li>
+      <li><a href="cv.html">Curriculum Vitae</a></li>
+    </ul>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
+  </nav>
+
+  <main class="research-page">
+
+    <!-- ── Overview ── -->
+    <section id="overview">
+      <div class="container">
+        <p class="wip-banner" role="note">
+          <i class="fas fa-person-digging" aria-hidden="true"></i>
+          <span><strong>Work in progress.</strong> This page is still being written; texts and figures may change.</span>
+        </p>
+        <h1>Research</h1>
+        <div class="theme-grid">
+          <a class="theme-card" href="#nemato">
+            <span class="theme-kicker">01</span>
+            <span class="theme-title">Acoustic waves in nematic Korteweg fluids</span>
+            <span class="theme-desc">Analysis and discretization of the nematic Helmholtz–Korteweg equation.</span>
+          </a>
+          <a class="theme-card" href="#structure">
+            <span class="theme-kicker">02</span>
+            <span class="theme-title">Structure-preserving finite element methods</span>
+            <span class="theme-desc">Exactly divergence-free discretizations for axisymmetric problems, unfitted meshes, and flows on surfaces.</span>
+          </a>
+          <a class="theme-card" href="#helio">
+            <span class="theme-kicker">03</span>
+            <span class="theme-title">Numerical methods for helioseismology</span>
+            <span class="theme-desc">Hybrid discontinuous Galerkin methods for Galbrun's equation, which models stellar oscillations.</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 01 Nematoacoustics ══ -->
+    <section id="nemato" class="alt-bg">
+      <div class="container">
+        <p class="section-kicker">01</p>
+        <h2>Acoustic waves in nematic Korteweg fluids</h2>
+        <p class="research-intro">
+          My PhD thesis studies time-harmonic acoustic waves in nematic liquid crystals, building on the work of
+          <a href="https://doi.org/10.1103/PhysRevE.111.035413" target="_blank" rel="noopener">Farrell and Zerbinati</a>.
+        </p>
+
+        <!-- Drum -->
+        <figure class="research-embed" id="drum-embed">
+          <div class="embed-head">
+            <div>
+              <h3>Play the nematic drum</h3>
+              <p>
+                Turn the director and hear the eigenmodes of a nematic membrane retune. Built from the
+                <a href="https://www.uzerbinati.eu/drum/" target="_blank" rel="noopener">nematic drum app</a>
+                by Umberto Zerbinati.
+              </p>
+            </div>
+          </div>
+          <div class="embed-slot is-loaded" data-src="assets/research/nematic-drum.html">
+            <iframe src="assets/research/nematic-drum.html" title="Interactive nematic drum"></iframe>
+          </div>
+        </figure>
+
+        <!-- Explainer: why the alignment changes the waves -->
+        <details class="explainer">
+          <summary>
+            <span class="explainer-title">Why does the alignment of the molecules change the waves?</span>
+            <span class="explainer-hint">Show explanation</span>
+          </summary>
+          <div class="explainer-body">
+            <p>
+              In an ordinary fluid, the molecules point in random directions and keep tumbling around, so
+              no direction is special. A sound wave from a point source therefore spreads equally fast in
+              all directions, and its wavefronts are circles.
+            </p>
+            <p>
+              A nematic liquid crystal is still a fluid: its rod-like molecules move and wobble freely. On
+              average, however, they line up along a common direction, the director
+              <span class="m"><b>n</b></span>. This order makes the fluid respond differently to compression
+              along <span class="m"><b>n</b></span> than across it, so sound travels faster along the
+              director and the wavefronts become ellipses stretched along <span class="m"><b>n</b></span>.
+              Turning the director turns the ellipses with it, which is what retunes the drum above.
+            </p>
+            <div class="sketch-groups">
+              <div class="sketch-group">
+                <h4>Ordinary fluid</h4>
+                <div class="sketch-pair">
+                  <figure><canvas data-sketch="isotropicV3" aria-label="Animation: molecules of an ordinary fluid with random orientations"></canvas>
+                    <figcaption>Random orientations</figcaption></figure>
+                  <figure><canvas data-sketch="wavesIsotropicV3" aria-label="Animation: circular wavefronts around a point source"></canvas>
+                    <figcaption>Circular wavefronts</figcaption></figure>
+                </div>
+              </div>
+              <div class="sketch-group">
+                <h4>Nematic liquid crystal</h4>
+                <div class="sketch-pair">
+                  <figure><canvas data-sketch="nematicV3" aria-label="Animation: molecules of a nematic fluid aligned along the director"></canvas>
+                    <figcaption>Aligned along <span class="m"><b>n</b></span></figcaption></figure>
+                  <figure><canvas data-sketch="wavesNematicV3" aria-label="Animation: elliptical wavefronts, faster along the director"></canvas>
+                    <figcaption>Faster along <span class="m"><b>n</b></span></figcaption></figure>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <article class="research-item">
+          <div class="research-text">
+            <h3>Sound that can be steered</h3>
+            <p>
+              An external electric field can reorient the director <span class="m"><b>n</b></span>, so the
+              acoustic response of a nematic fluid can be changed without changing the device that holds it.
+              This makes nematic liquid crystals candidates for tunable acoustic devices. In the slit ring
+              shown here, rotating the director decides whether the same incoming wave is trapped inside the
+              ring or simply scatters off it.
+            </p>
+            <p>
+              I study the equations that describe these waves. For a constant director, the density
+              perturbation satisfies the nematic Helmholtz–Korteweg
+              (NHK) equation, a fourth-order extension of the Helmholtz equation with an isotropic and an
+              anisotropic leading-order term. For vanishing anisotropy, it reduces to the Helmholtz–Korteweg
+              equation for isotropic capillary fluids, such as liquid–vapor mixtures or quantum fluids, to
+              which the results also apply.
+            </p>
+          </div>
+
+          <figure class="research-fig" id="resonator-widget">
+            <div class="fig-controls">
+              <span class="fig-controls-label">Director <span class="m"><b>n</b></span></span>
+              <div class="seg" role="group" aria-label="Director">
+                <button type="button" class="seg-btn is-active" data-embed="assets/slides/OFAP26/figs/webgui_resonator.html?deform=0.15&tilt=-55"
+                        data-caption="The frequency of the incoming wave matches an eigenfrequency of the slit ring: the field is trapped inside, with an amplitude about seven orders of magnitude larger than for the other director.">(1, 0)</button>
+                <button type="button" class="seg-btn" data-embed="assets/slides/OFAP26/figs/webgui_non_resonator.html?deform=0.15&tilt=-55"
+                        data-caption="Rotating the director shifts the eigenfrequencies of the ring. The same incoming wave no longer resonates and simply scatters.">(0, 1)</button>
+              </div>
+            </div>
+            <div class="embed-slot embed-slot--wide" data-src="assets/slides/OFAP26/figs/webgui_resonator.html?deform=0.15&tilt=-55"
+                 data-title="Interactive view of the condensation field around a slit ring">
+              <button type="button" class="embed-load"><i class="fas fa-cube"></i>&nbsp; Load the interactive solution</button>
+              <span class="embed-alt">about 33 MB per scene</span>
+            </div>
+            <figcaption class="embed-caption">
+              The frequency of the incoming wave matches an eigenfrequency of the slit ring: the field is trapped inside, with an amplitude about seven orders of magnitude larger than for the other director.
+            </figcaption>
+          </figure>
+        </article>
+
+        <article class="research-item research-item--flip">
+          <div class="research-text">
+            <h3>Analysis and discretization of the NHK equation</h3>
+            <p>
+              We proved well-posedness of the NHK equation and devised its first convergent discretization,
+              based on <span class="m">C</span><sup>1</sup>-conforming elements. The proof constructs
+              T-coercivity from the eigenbasis of the isotropic problem and treats the anisotropy as a
+              perturbation, so the admissible anisotropy vanishes near isotropic resonances.
+            </p>
+            <div class="research-ref" data-pub="pub4"></div>
+            <p>
+              In follow-up work, I removed this dependence by quantifying the anisotropy through the Cordes
+              condition, which yields a Gårding inequality under a smallness condition on the anisotropy
+              alone. Since <span class="m">C</span><sup>1</sup> elements are hard to construct on curved or
+              three-dimensional domains, I also introduced a hybrid <span class="m">C</span><sup>0</sup>-interior
+              penalty discretization that uses standard Lagrange finite elements and whose cost is reduced by
+              static condensation.
+            </p>
+            <div class="research-ref" data-pub="pub9"></div>
+          </div>
+
+          <figure class="research-fig" id="scatter-widget">
+            <div class="fig-controls">
+              <span class="fig-controls-label">Medium</span>
+              <div class="seg" role="group" aria-label="Medium">
+                <button type="button" class="seg-btn is-active" data-embed="assets/slides/OFAP26/figs/webgui_scattering_isotropic.html">Isotropic</button>
+                <button type="button" class="seg-btn" data-embed="assets/slides/OFAP26/figs/webgui_scattering_nematic.html">Nematic</button>
+              </div>
+            </div>
+            <div class="embed-slot embed-slot--square" data-src="assets/slides/OFAP26/figs/webgui_scattering_isotropic.html"
+                 data-title="Interactive 3D view of a scattered wave">
+              <button type="button" class="embed-load"><i class="fas fa-cube"></i>&nbsp; Load the interactive solution</button>
+              <span class="embed-alt">about 4 MB per scene</span>
+            </div>
+            <figcaption>
+              Scattering by a sound-soft obstacle, computed with the hybrid
+              <span class="m">C</span><sup>0</sup>-interior penalty method. Switch between an isotropic and a
+              nematic medium; drag to rotate and scroll to zoom.
+            </figcaption>
+          </figure>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══ 02 Structure-preserving FEM ══ -->
+    <section id="structure">
+      <div class="container">
+        <p class="section-kicker">02</p>
+        <h2>Structure-preserving finite element methods</h2>
+        <p class="research-intro">
+          Another central theme of my work is to devise structure-preserving discretizations that are exactly
+          divergence-free, ensuring mass conservation and, in turn, pressure-robustness for incompressible
+          flow problems. We have developed such methods for axisymmetric problems and unfitted meshes, where
+          standard constructions fail, and for surface flows, where the topology of the surface plays a
+          crucial role.
+        </p>
+
+        <!-- Axisymmetric Stokes -->
+        <article class="research-item">
+          <div class="research-text">
+            <h3>Pressure-robustness for the axisymmetric Stokes problem</h3>
+            <p>
+              We developed the first pressure-robust discretization of the axisymmetric Stokes problem on
+              general meshes. In engineering, problems posed on rotationally symmetric 3D geometries are
+              routinely reduced to 2D problems by a Fourier expansion in the azimuthal direction. Since the
+              axisymmetric divergence contains the additional term <span class="m">u<sub>r</sub>/r</span>,
+              methods that are pressure-robust in Cartesian coordinates (e.g., Scott–Vogelius or
+              <span class="m">H</span>(div)-conforming methods) lose this property, and the 2D reduction can
+              cost more than solving in 3D.
+            </p>
+            <p>
+              The key idea is a velocity reconstruction in the right-hand side, built from standard
+              <span class="m">H</span>(div)-conforming interpolation operators modified locally at the
+              symmetry axis, that restores it for the low-order Bernardi–Raugel element.
+            </p>
+            <div class="research-ref" data-pub="pub2"></div>
+          </div>
+
+          <figure class="research-fig" id="cost-widget">
+            <div class="fig-controls">
+              <span class="fig-controls-label">Viscosity <span class="m">ν</span></span>
+              <div class="seg" role="group" aria-label="Viscosity" id="cost-nu"></div>
+            </div>
+            <div class="chart-wrap">
+              <svg id="cost-chart" viewBox="0 0 560 360" role="img"
+                   aria-label="Velocity error against number of unknowns for a pressure-robust 3D method and a non-robust axisymmetric 2D method"></svg>
+              <div class="chart-tip" id="cost-tip" hidden></div>
+            </div>
+            <p class="fig-readout" id="cost-readout" aria-live="polite"></p>
+            <figcaption>
+              Velocity error against the number of unknowns for the same <span class="m">H</span>(div)-conforming
+              method, applied in 3D (pressure-robust) and to the axisymmetric 2D reduction (not robust).
+              As <span class="m">ν</span> → 0, the 2D error grows like <span class="m">1/ν</span> and the
+              reduction ends up needing more unknowns than the full 3D problem.
+            </figcaption>
+          </figure>
+        </article>
+
+        <!-- Explainer: the axisymmetric reduction -->
+        <details class="explainer">
+          <summary>
+            <span class="explainer-title">How does the reduction to 2D work?</span>
+            <span class="explainer-hint">Show explanation</span>
+          </summary>
+          <div class="explainer-body explainer-split">
+            <div>
+              <p>
+                A rotationally symmetric domain is what you get by rotating a 2D cross-section, the meridian
+                domain, once around the symmetry axis. In cylindrical coordinates
+                <span class="m">(r, θ, z)</span>, functions on the 3D domain can be expanded in Fourier modes
+                in the angle <span class="m">θ</span>, and each mode solves its own problem on the 2D
+                meridian domain. If the data do not depend on <span class="m">θ</span>, a single 2D problem
+                suffices.
+              </p>
+              <p>
+                Every point <span class="m">(r, z)</span> of the meridian domain stands for a whole circle in
+                3D, so the 2D problem is much smaller. The price is a change in the equations: integrals carry
+                the weight <span class="m">r</span>, the divergence becomes
+                <span class="m">∂<sub>r</sub>u<sub>r</sub> + u<sub>r</sub>/r + ∂<sub>z</sub>u<sub>z</sub></span>,
+                and the symmetry axis <span class="m">r = 0</span>, where the weight vanishes, becomes part of
+                the boundary of the 2D domain.
+              </p>
+            </div>
+            <figure class="research-fig" id="axisym-widget">
+              <canvas id="axisym-canvas" role="img"
+                      aria-label="Animation: a 2D cross-section rotates around the symmetry axis and sweeps out a 3D body; one point of the cross-section traces a full circle"></canvas>
+              <figcaption>
+                Rotating the meridian domain (right) around the axis sweeps out the 3D domain (left). The
+                marked point traces a full circle: in the 2D problem, that whole circle is a single point.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- Unfitted mixed FEM -->
+        <article class="research-item research-item--flip">
+          <div class="research-text">
+            <h3>Mass-conserving unfitted finite elements</h3>
+            <p>
+              We proposed and analyzed an unfitted mixed finite element method that is robust to small cuts
+              and conserves mass exactly. Unfitted methods decouple the geometry from the computational mesh
+              to handle complex or evolving geometries, but small cut elements usually require stabilization
+              terms, and these pollute the mass balance.
+            </p>
+            <p>
+              The key idea is to formulate the divergence constraint on the active mesh, i.e., on all
+              elements that touch the domain. The resulting slight inconsistency does not affect the flux,
+              and a local post-processing of the scalar variable recovers optimal rates.
+            </p>
+            <div class="research-ref" data-pub="pub7"></div>
+          </div>
+
+          <figure class="research-fig" id="cut-widget">
+            <div class="chart-wrap">
+              <svg id="cut-svg" viewBox="0 0 400 400" role="img" tabindex="0"
+                   aria-label="A circular domain on a fixed background mesh; drag to move it and see which elements are cut"></svg>
+            </div>
+            <div class="fig-controls">
+              <label class="fig-controls-label" for="cut-radius">Radius</label>
+              <input type="range" id="cut-radius" min="0.12" max="0.42" step="0.002" value="0.283">
+            </div>
+            <ul class="fig-legend">
+              <li><span class="swatch swatch--inner"></span>interior elements</li>
+              <li><span class="swatch swatch--cut"></span>cut elements</li>
+              <li><span class="swatch swatch--small"></span>smallest cut</li>
+            </ul>
+            <p class="fig-readout" id="cut-readout" aria-live="polite"></p>
+            <figcaption>
+              <strong>Drag the domain</strong> across the fixed background mesh. The active mesh consists of
+              the interior and the cut elements. The part of a cut element inside the domain can become
+              arbitrarily small, which is what breaks standard methods.
+            </figcaption>
+          </figure>
+        </article>
+
+        <!-- Explainer: unfitted finite elements -->
+        <details class="explainer">
+          <summary>
+            <span class="explainer-title">What are unfitted finite elements?</span>
+            <span class="explainer-hint">Show explanation</span>
+          </summary>
+          <div class="explainer-body explainer-split">
+            <div>
+              <p>
+                Standard finite element methods need a mesh whose elements line up with the boundary of the
+                domain. For complex geometries, generating such a mesh is expensive, and when the geometry
+                moves or deforms, the mesh has to be deformed or generated again.
+              </p>
+              <p>
+                Unfitted methods instead use one fixed background mesh and describe the domain implicitly,
+                for instance as the region where a level set function is negative. The boundary may cut
+                through elements anywhere. Integrals on a cut element are computed only over the part inside
+                the domain, and boundary conditions are imposed weakly instead of through the mesh.
+              </p>
+              <p>
+                The price is that this part can be arbitrarily small, which makes standard discretizations
+                unstable and ill-conditioned. The usual fix adds stabilization terms near the boundary; in
+                mixed methods, these disturb the discrete mass balance, which our method avoids.
+              </p>
+            </div>
+            <figure class="research-fig" id="unfitted-widget">
+              <canvas id="unfitted-canvas" role="img"
+                      aria-label="Animation: a moving domain with a fitted mesh that deforms with it, next to a fixed background mesh where only the cut elements change"></canvas>
+              <figcaption>
+                The same moving domain twice. Left: a fitted mesh has to deform with the boundary. Right: the
+                background mesh stays fixed, and only the set of cut elements changes.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- Surface flows -->
+        <article class="research-item">
+          <div class="research-text">
+            <h3>Incompressible flows on surfaces of any topology</h3>
+            <p>
+              We introduced discretizations of incompressible flows on surfaces of any topology that avoid the
+              saddle-point structure of standard mixed methods. On simply connected surfaces, where all
+              divergence-free fields are rotated gradients, a streamfunction formulation achieves this. On
+              general surfaces, the divergence-free fields also contain harmonic fields, which a
+              streamfunction cannot capture.
+            </p>
+            <p>
+              The method therefore adds a precomputed basis of discrete harmonic fields to the streamfunction.
+              A discrete Helmholtz–Hodge decomposition shows that this splitting captures all discretely
+              divergence-free velocities. The resulting high-order method is pressure-robust by design, with
+              only a streamfunction and finitely many harmonic coefficients as unknowns.
+            </p>
+            <div class="research-ref" data-pub="pub1"></div>
+          </div>
+
+          <figure class="research-fig fig-video">
+            <div class="keyed-video">
+              <canvas width="594" height="588" role="img"
+                      aria-label="Animation of a von Kármán vortex street on the NGSolve sculpture"></canvas>
+              <video src="assets/research/sculpture.mp4" data-poster="assets/research/sculpture_poster.jpg"
+                     width="594" height="588" muted loop playsinline preload="none"></video>
+              <button type="button" class="video-toggle" aria-label="Play"><i class="fas fa-play"></i></button>
+            </div>
+            <figcaption>
+              A von Kármán vortex street on the NGSolve sculpture. More animations on YouTube:
+              <a href="https://www.youtube.com/watch?v=DqHXLNkhF0o" target="_blank" rel="noopener">trefoil knot</a>,
+              <a href="https://www.youtube.com/watch?v=fPq8WqddI7M" target="_blank" rel="noopener">pierced sphere</a>.
+            </figcaption>
+          </figure>
+        </article>
+
+        <!-- Explainer: why topology matters -->
+        <details class="explainer">
+          <summary>
+            <span class="explainer-title">Why does the topology matter?</span>
+            <span class="explainer-hint">Show explanation</span>
+          </summary>
+          <div class="explainer-body">
+            <div class="explainer-split">
+              <div>
+                <p>
+                  On a surface, a divergence-free velocity can often be written as the rotated gradient of a
+                  scalar streamfunction. The flow then follows the level lines of the streamfunction, and using
+                  it as the unknown satisfies incompressibility automatically, without a pressure.
+                </p>
+                <p>
+                  This works on simply connected surfaces, such as the Stanford bunny. A surface with handles
+                  or holes also carries harmonic fields: divergence-free velocities that circulate around the
+                  handles and cannot be written with a streamfunction. How many there are depends only on the
+                  topology; a closed surface with <span class="m">g</span> handles has
+                  <span class="m">2g</span> of them. Punch a hole through the bunny and two appear.
+                </p>
+              </div>
+
+              <figure class="research-fig switcher" id="surface-widget">
+                <div class="fig-controls">
+                  <div class="seg" role="group" aria-label="Bunny">
+                    <button type="button" class="seg-btn is-active" data-src="assets/research/bunnyBlender.jpg"
+                            data-caption="The Stanford bunny is simply connected: there are no harmonic fields, and the divergence-free velocity follows the contours of its streamfunction exactly.">Simply connected</button>
+                    <button type="button" class="seg-btn" data-src="assets/research/holybunnyBlender.jpg"
+                            data-caption="With a hole, the bunny has the topology of a torus and the space of harmonic fields has dimension two. The velocity now deviates from the contours of the streamfunction.">With a hole</button>
+                  </div>
+                </div>
+                <div class="fig-frame fig-frame--fixed" style="--ar: 618 / 600">
+                  <img class="switcher-img" src="assets/research/bunnyBlender.jpg" width="618" height="600"
+                       alt="Divergence-free vector field and streamfunction contours on the Stanford bunny">
+                </div>
+                <figcaption class="switcher-caption">
+                  The Stanford bunny is simply connected: there are no harmonic fields, and the divergence-free velocity follows the contours of its streamfunction exactly.
+                </figcaption>
+              </figure>
+            </div>
+
+            <div class="decomp">
+              <p>
+                The Helmholtz–Hodge decomposition splits a vector field into a rotational part, a harmonic
+                part and a gradient part that carries the divergence. A discretely divergence-free velocity
+                has no gradient part, so a streamfunction and a few harmonic coefficients describe it
+                completely. On a torus:
+              </p>
+              <div class="decomp-row">
+                <figure>
+                  <img src="assets/research/torus_total.webp" width="800" height="639" loading="lazy"
+                       alt="A vector field on a torus">
+                  <figcaption>Vector field<br><span>the sum of the three parts</span></figcaption>
+                </figure>
+                <span class="decomp-op" aria-hidden="true">=</span>
+                <figure>
+                  <img src="assets/research/torus_rotfield.webp" width="800" height="637" loading="lazy"
+                       alt="Rotational part of the field">
+                  <figcaption>Rotational part<br><span>rotated gradient of a streamfunction</span></figcaption>
+                </figure>
+                <span class="decomp-op" aria-hidden="true">+</span>
+                <figure>
+                  <img src="assets/research/torus_harmonic.webp" width="800" height="636" loading="lazy"
+                       alt="Harmonic part of the field">
+                  <figcaption>Harmonic part<br><span>circulates around the handle</span></figcaption>
+                </figure>
+                <span class="decomp-op" aria-hidden="true">+</span>
+                <figure>
+                  <img src="assets/research/torus_gradfield.webp" width="800" height="638" loading="lazy"
+                       alt="Gradient part of the field">
+                  <figcaption>Gradient part<br><span>carries the divergence</span></figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ══ 03 Helioseismology ══ -->
+    <section id="helio" class="alt-bg">
+      <div class="container">
+        <p class="section-kicker">03</p>
+        <h2>Numerical methods for helioseismology</h2>
+
+        <article class="research-item research-item--flip">
+          <div class="research-text">
+            <h3>Hybrid discontinuous Galerkin methods for Galbrun's equation</h3>
+            <p>
+              We developed hybrid discontinuous Galerkin (HDG) discretizations of Galbrun's
+              equation that are stable and optimally convergent for all polynomial degrees. Galbrun's
+              equation is a vector-valued time-harmonic wave equation that models stellar oscillations and is
+              central to helioseismology, the study of the Sun's interior through its surface oscillations.
+            </p>
+            <p>
+              Inferring the interior structure requires many efficient and accurate forward solves, which is
+              challenging because the equation is highly indefinite and its coefficients vary over several
+              orders of magnitude between the core and the surface. Its analysis relies on weak
+              T-coercivity: a generalized Helmholtz decomposition allows one to flip the sign of the
+              divergence-free part, which yields a coercive problem up to a compact perturbation.
+            </p>
+            <p>
+              Discretely, this requires a stable divergence operator which, as for the Stokes problem,
+              restricts <span class="m">H</span><sup>1</sup>-conforming methods to high polynomial degrees or
+              special meshes. The central ingredient is a discrete Helmholtz decomposition of the DG spaces,
+              which, combined with suitably weighted norms, yields stability and robustness with respect to
+              the coefficients. Hybridization mitigates the cost of a non-conforming discretization.
+            </p>
+            <div class="research-ref" data-pub="pub8"></div>
+          </div>
+
+          <figure class="research-fig switcher" id="sun-widget">
+            <div class="fig-controls">
+              <span class="fig-controls-label">Squared Mach number</span>
+              <div class="seg" role="group" aria-label="Squared Mach number of the background flow">
+                <button type="button" class="seg-btn is-active" data-src="assets/research/sun_mach0.05.jpg">0.05</button>
+                <button type="button" class="seg-btn" data-src="assets/research/sun_mach0.50.jpg">0.5</button>
+                <button type="button" class="seg-btn" data-src="assets/research/sun_mach1.00.jpg">1.0</button>
+                <button type="button" class="seg-btn" data-src="assets/research/sun_mach1.50.jpg">1.5</button>
+              </div>
+            </div>
+            <div class="fig-frame fig-frame--fixed" style="--ar: 685 / 588">
+              <img class="switcher-img" src="assets/research/sun_mach0.05.jpg" width="685" height="588"
+                   alt="Real part of the x-component of a solution of Galbrun's equation on a cross-section of the Sun">
+            </div>
+            <figcaption>
+              Oscillations in a model of the Sun with a rotating background flow: real part of the
+              <span class="m">x</span>-component of the displacement, computed with the HDG method at
+              polynomial degree 7. Density and sound speed are taken from the standard solar model S.
+              Increase the strength of the flow to see how the solution changes; for large Mach numbers,
+              outside the range covered by the theory, instabilities appear.
+            </figcaption>
+          </figure>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── Back ── -->
+    <section id="research-outro">
+      <div class="container research-outro">
+        <a href="index.html#publications" class="cv-button"><i class="fas fa-book-open"></i>&nbsp; All publications</a>
+        <a href="index.html#talks" class="see-all-link">Talks and slides →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-links">
+        <a href="https://scholar.google.com/citations?user=trKSybwAAAAJ&hl=de" target="_blank" rel="noopener" aria-label="Google Scholar"><i class="ai ai-google-scholar"></i></a>
+        <a href="https://github.com/TimvanBeeck" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/tim-van-beeck-9bb501202" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        <a href="https://orcid.org/0009-0002-4550-8636" target="_blank" rel="noopener" aria-label="ORCID"><i class="ai ai-orcid"></i></a>
+      </div>
+      <p>&copy; 2026 Tim van Beeck</p>
+    </div>
+  </footer>
+
+  <!-- ── Citation Modal ── -->
+  <div id="cite-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="cite-modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="cite-modal-title" class="modal-title">BibTeX Citation</span>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <pre class="modal-pre"><code id="cite-bib-content"></code></pre>
+      <div class="modal-footer">
+        <button id="copy-bib-btn" class="copy-btn">
+          <i class="fas fa-copy"></i> Copy to clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="research.js"></script>
+  <script src="assets/research/nematicSketches.js"></script>
+</body>
+</html>
